@@ -143,4 +143,9 @@ export type ServerOptions = {
    * Max file upload size (multipart/form-data).
    */
   maxFileSize?: number;
+
+  /**
+   * Generate API documentation
+   */
+  doc: boolean;
 };

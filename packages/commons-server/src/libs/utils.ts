@@ -32,7 +32,7 @@ import { ServerRequest } from './requests';
  *
  * @param object
  */
-const TransformHeaders = (
+export const TransformHeaders = (
   headers: IncomingHttpHeaders | OutgoingHttpHeaders
 ): Header[] =>
   Object.keys(headers).reduce<Header[]>((newHeaders, key) => {

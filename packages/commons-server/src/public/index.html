@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CDE BE API Documentation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        .filter-container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 100;
+            background: white;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform: translateX(-5%);
+            border-radius: 20px;
+            transition: transform 0.3s ease;
+        }
+    
+        .filter-container.hidden {
+            transform: translateX(-5%) translateY(calc(-100% + 10px));
+        }
+    
+        .toggle-filters {
+            position: absolute;
+            bottom: -10px;
+            right: 0;
+            transform: translateX(-5%);
+            width: 120px;
+            height: 40px;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        }
+    
+        .toggle-filters:hover {
+            background: #f8fafc;
+        }
+    
+        .chevron {
+            transition: transform 0.3s ease;
+            display: inline-block;
+            color: gray;
+            font-weight: bold;
+        }
+    
+        .filter-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    
+        .badge-filter {
+            padding: 4px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s;
+            border: 1px solid;
+            font-weight: 500;
+        }
+        .badge-filter.active {
+            color: white !important;
+        }
+        .badge-filter[data-badge="READY"] {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+        .badge-filter[data-badge="READY"].active {
+            background: #22c55e;
+        }
+        .badge-filter[data-badge="NOT_READY"] {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+    
+        .badge-filter[data-badge="NOT_READY"].active {
+            background: #ef4444;
+        }
+    
+        .badge-filter[data-badge="PUBLIC"] {
+            border-color: #6b7280;
+            color: #6b7280;
+        }
+    
+        .badge-filter[data-badge="PUBLIC"].active {
+            background: #6b7280;
+        }
+    
+        .badge-filter[data-badge="PENGGUNA"] {
+            border-color: #a855f7;
+            color: #a855f7;
+        }
+    
+        .badge-filter[data-badge="PENGGUNA"].active {
+            background: #a855f7;
+        }
+    
+        .badge-filter[data-badge="PENYEDIA"] {
+            border-color: #f97316;
+            color: #f97316;
+        }
+    
+        .badge-filter[data-badge="PENYEDIA"].active {
+            background: #f97316;
+        }
+    
+        .badge-filter[data-badge="PENYELENGGARA"] {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+    
+        .badge-filter[data-badge="PENYELENGGARA"].active {
+            background: #3b82f6;
+        }
+    
+        .badge-filter[data-badge="UNKNOWN"] {
+            border-color: #6b7280;
+            color: #6b7280;
+        }
+    
+        .badge-filter[data-badge="UNKNOWN"].active {
+            background: #6b7280;
+        }
+    
+        .search-container {
+            margin-top: 12px;
+            width: 100%;
+        }
+    
+        .search-input {
+            width: 80%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+    
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+    
+        /* Highlight matching search results */
+        .search-highlight {
+            background-color: #fff176;
+            padding: 0 2px;
+            border-radius: 2px;
+            display: inline;
+            color: #000;
+        }
+    
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+    
+        .search-counter {
+            position: absolute;
+            right: 12px;
+            color: #6b7280;
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+    
+        .search-input::placeholder {
+            color: #9ca3af;
+            content: "Search... (Ctrl+K)";
+        }
+    
+        .toggle-container {
+            position: absolute;
+            bottom: -30px;
+            right: 0;
+            transform: translateX(-5%);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+    
+        .clear-filters {
+            right: 132px;
+            bottom: -10px;
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            /* padding: 0 16px; */
+            border-radius: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            color: #fd7c7c;
+            font-size: 25px;
+            font-weight: bold;
+        }
+    
+        .clear-filters:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+    
+        .clear-filters.hidden {
+            display: none;
+        }
+    </style>
+    </head>
+<body>
+    <div class="filter-container hidden">
+        <div class="toggle-container">
+    
+            <button id="toggleFilters" class="toggle-filters">
+                <span class="chevron">(Ctrl+K) &#x1F50E;</span>
+            </button>
+    
+            <button id="clearFilters" class="clear-filters hidden">🗑</button>
+    
+        </div>
+        <div class="filter-badges" id="filterBadges"></div>
+        <div class="search-container">
+            <div class="search-wrapper">
+                <input type="text" id="apiSearch" placeholder="Search... (Ctrl+K)" class="search-input">
+                <span id="searchCounter" class="search-counter"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="redoc-container"></div>
+
+    <script src="./redoc.standalone.js"></script>
+    
+    <script>
+        console.log('hereEEEE')
+
+        const CONFIG = {
+            swaggerPath: 'OPEN_API_FILE_PATH',
+            redocOptions: {
+                expandResponses: "200,400",
+                hideLoading: true,
+                theme: {
+                    rightPanel: {
+                        backgroundColor: "#103178"
+                    }
+                }
+            }
+        };
+
+        const xBadgeMapping = {
+            // READY: { color: "green", position: "before", name: "READY" },
+            // NOT_READY: { color: "red", position: "before", name: "NOT READY" },
+            // PUBLIC: { color: "gray", position: "before", name: "PUBLIC" },
+            // PENGGUNA: { color: "purple", position: "before", name: "PENGGUNA" },
+            // PENYEDIA: { color: "orange", position: "before", name: "PENYEDIA" },
+            // PENYELENGGARA: { color: "blue", position: "before", name: "PENYELENGGARA" },
+            // UNKNOWN: { color: "gray", position: "before", name: "UNKNOWN" }
+        };
+
+        // State management
+        const state = {
+            spec: null,
+            activeFilters: new Set(),
+            currentMatchIndex: -1,
+            matches: [],
+        };
+
+        function initSearch() {
+            const searchInput = document.getElementById('apiSearch');
+            let debounceTimeout;
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    const searchTerm = e.target.value.trim().toLowerCase();
+                    state.currentMatchIndex = -1;
+                    handleSearch(searchTerm);
+                }, 300);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && state.matches.length > 0) {
+                    e.preventDefault();
+                    cycleMatches();
+                }
+            });
+        }
+
+        function handleSearch(searchTerm) {
+            const searchCounter = document.getElementById('searchCounter');
+
+            if (!searchTerm) {
+                removeHighlights();
+                searchCounter.textContent = ''; // Clear counter when search is empty
+                return;
+            }
+
+            // Wait for Redoc to fully render
+            const checkRedocReady = setInterval(() => {
+                const operations = document.querySelectorAll('[data-section-id^="operation/"]');
+                if (operations.length > 0) {
+                    clearInterval(checkRedocReady);
+                    searchAndScrollToMatch(searchTerm, operations);
+                }
+            }, 100);
+        }
+
+        function searchAndScrollToMatch(searchTerm, operations) {
+            removeHighlights();
+
+            state.matches = [];
+            const searchCounter = document.getElementById('searchCounter');
+
+            operations.forEach(operation => {
+                const text = operation.textContent.toLowerCase();
+                const endpoint = operation.querySelector('.operation-api-url');
+                const summary = operation.querySelector('.operation-summary');
+                const description = operation.querySelector('.operation-description');
+                const parameters = operation.querySelectorAll('.param-name');
+
+                if (text.includes(searchTerm)) {
+                    state.matches.push(operation);
+
+                    // Highlight in all relevant elements
+                    [endpoint, summary, description].forEach(element => {
+                        if (element && element.textContent.toLowerCase().includes(searchTerm)) {
+                            highlightText(element, searchTerm);
+                        }
+                    });
+
+                    // Highlight parameter names
+                    parameters.forEach(param => {
+                        if (param.textContent.toLowerCase().includes(searchTerm)) {
+                            highlightText(param, searchTerm);
+                        }
+                    });
+                }
+            });
+
+            if (state.matches.length > 0) {
+                searchCounter.textContent = `1/${state.matches.length} matches`;
+                state.currentMatchIndex = 0;
+                state.matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                searchCounter.textContent = 'No matches';
+                state.currentMatchIndex = -1;
+            }
+        }
+
+        function highlightText(element, searchTerm) {
+            const originalContent = element.innerHTML;
+            const searchTermRegex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+
+            // Create a temporary div to safely manipulate HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = originalContent;
+
+            // Function to recursively process text nodes
+            function processNode(node) {
+                if (node.nodeType === 3) { // Text node
+                    const text = node.textContent;
+                    const highlightedText = text.replace(searchTermRegex, '<span class="search-highlight">$1</span>');
+                    if (text !== highlightedText) {
+                        const wrapper = document.createElement('span');
+                        wrapper.innerHTML = highlightedText;
+                        node.parentNode.replaceChild(wrapper, node);
+                    }
+                } else if (node.nodeType === 1) { // Element node
+                    Array.from(node.childNodes).forEach(processNode);
+                }
+            }
+
+            // Process all child nodes
+            Array.from(tempDiv.childNodes).forEach(processNode);
+
+            // Update the original element
+            element.innerHTML = tempDiv.innerHTML;
+        }
+
+        function removeHighlights() {
+            document.querySelectorAll('.search-highlight').forEach(highlight => {
+                // Preserve the text content
+                const text = highlight.textContent;
+                const textNode = document.createTextNode(text);
+                highlight.parentNode.replaceChild(textNode, highlight);
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function cycleMatches() {
+            if (state.matches.length === 0) return;
+
+            state.currentMatchIndex = (state.currentMatchIndex + 1) % state.matches.length;
+            const matchElement = state.matches[state.currentMatchIndex];
+
+            matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            const searchCounter = document.getElementById('searchCounter');
+            searchCounter.textContent = `${state.currentMatchIndex + 1}/${state.matches.length} matches`;
+        }
+
+        function setupSearchHotkey() {
+            const filterContainer = document.querySelector('.filter-container');
+            document.addEventListener('keydown', (e) => {
+                // Check for Ctrl+K (or Cmd+K on Mac)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault(); // Prevent default browser behavior
+                    const searchInput = document.getElementById('apiSearch');
+                    filterContainer.classList.toggle('hidden');
+                    searchInput.focus();
+                }
+            });
+        }
+
+        function setupFilterToggle() {
+            const filterContainer = document.querySelector('.filter-container');
+            const toggleButton = document.getElementById('toggleFilters');
+
+            toggleButton.addEventListener('click', () => {
+                filterContainer.classList.toggle('hidden');
+            });
+        }
+
+        function setupClearFilters() {
+            const clearButton = document.getElementById('clearFilters');
+
+            clearButton.addEventListener('click', () => {
+                const activeButtons = document.querySelectorAll('.badge-filter.active');
+                activeButtons.forEach(button => {
+                    button.classList.remove('active');
+                });
+                state.activeFilters.clear();
+                clearButton.classList.add('hidden');
+                filterSpec();
+            });
+        }
+
+        async function initDocs() {
+            const response = await fetch(CONFIG.swaggerPath);
+            if (!response.ok) throw new Error('Failed to fetch API spec');
+
+            // Get file extension from the path
+            const fileExtension = CONFIG.swaggerPath.split('.').pop()?.toLowerCase();
+            
+            // Get the raw text content
+            const rawContent = await response.text();
+            
+            try {
+                // Try parsing as JSON first
+                state.spec = JSON.parse(rawContent);
+            } catch (e) {
+                // If JSON parsing fails, try parsing as YAML
+                if (typeof jsyaml !== 'undefined') {
+                    state.spec = jsyaml.load(rawContent);
+                } else {
+                    // Load YAML parser dynamically if not available
+                    const yamlScript = document.createElement('script');
+                    yamlScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js';
+                    yamlScript.onload = () => {
+                        state.spec = jsyaml.load(rawContent);
+                        createFilterButtons();
+                        initRedoc();
+                    };
+                    document.head.appendChild(yamlScript);
+                    return;
+                }
+            }
+
+
+            const typesResponse = await fetch('model/types.ts');
+            if (!typesResponse.ok) throw new Error('Failed to fetch TypeScript types');
+
+            const typesText = await typesResponse.text();
+
+            // Inject x-codeSamples with TypeScript types where relevant
+            addTypeScriptCodeSamples(state.spec, typesText);
+
+            
+            createFilterButtons();
+            initRedoc();
+            initSearch();
+            setupSearchHotkey();
+            setupFilterToggle();
+            setupClearFilters();
+            createFilterButtons();
+            
+        }
+
+        function createFilterButtons() {
+            const filterContainer = document.getElementById('filterBadges');
+            const fragment = document.createDocumentFragment();
+
+            Object.entries(xBadgeMapping).forEach(([badge, config]) => {
+                const button = document.createElement('button');
+                button.className = 'badge-filter';
+                button.setAttribute('data-badge', badge);
+                button.textContent = config.name;
+                button.onclick = () => toggleFilter(badge, button);
+                fragment.appendChild(button);
+            });
+
+            filterContainer.appendChild(fragment);
+        }
+
+        function toggleFilter(badge, button) {
+            const { activeFilters } = state;
+            const clearButton = document.getElementById('clearFilters');
+
+            if (activeFilters.has(badge)) {
+                activeFilters.delete(badge);
+                button.classList.remove('active');
+            } else {
+                activeFilters.add(badge);
+                button.classList.add('active');
+            }
+
+            // Show/hide clear button based on active filters
+            clearButton.classList.toggle('hidden', activeFilters.size === 0);
+
+            filterSpec();
+        }
+
+        function filterSpec() {
+            if (state.activeFilters.size === 0) {
+                initRedoc(state.spec);
+                return;
+            }
+
+            const filteredSpec = JSON.parse(JSON.stringify(state.spec));
+            const badgeNameToKey = new Map(
+                Object.entries(xBadgeMapping).map(([key, value]) => [value.name, key])
+            );
+
+            // Filter paths
+            Object.entries(filteredSpec.paths).forEach(([path, methods]) => {
+                Object.entries(methods).forEach(([method, operation]) => {
+                    const badges = operation['x-badges'] || [];
+                    const hasMatchingBadge = badges.some(badge =>
+                        state.activeFilters.has(badgeNameToKey.get(badge.name))
+                    );
+
+                    if (!hasMatchingBadge) {
+                        delete methods[method];
+                    }
+                });
+
+                if (Object.keys(methods).length === 0) {
+                    delete filteredSpec.paths[path];
+                }
+            });
+
+            initRedoc(filteredSpec);
+        }
+
+    function initRedoc(specToUse = state.spec) {
+        const container = document.getElementById('redoc-container');
+        container.innerHTML = '';
+
+        Redoc.init(
+            specToUse,
+            CONFIG.redocOptions,
+            container
+        );
+    }
+
+    // Start the initialization when the DOM is ready
+    document.addEventListener('DOMContentLoaded', initDocs);
+
+    function addTypeScriptCodeSamples(spec, typesText) {
+        const typesMap = parseTypesByRequest(typesText);
+
+        // Iterate through paths and methods to inject x-codeSamples
+        for (const path in spec.paths) {
+            for (const method in spec.paths[path]) {
+                const operation = spec.paths[path][method];
+                const requestKey = `${method.toUpperCase()}:${path}`; // Construct request key
+
+                // Check if relevant types exist for this endpoint
+                if (typesMap[requestKey]) {
+                    if (!operation['x-codeSamples']) {
+                        operation['x-codeSamples'] = [];
+                    }
+
+                    // Extract all type names from the code
+                    const typeDefinitions = typesMap[requestKey];
+                    const typeNames = new Set();
+
+                    // Match export type/interface declarations
+                    const exportMatches = typeDefinitions.matchAll(/export\s+(type|interface)\s+([A-Za-z0-9_]+)/g);
+                    for (const match of exportMatches) {
+                        const typeName = match[2];
+                        // Ignore specific type names
+                        if (!['RequestParams', 'RequestQuery', 'RequestBody', 'RequestHeaders', 'ResponseBody'].includes(typeName)) {
+                            typeNames.add(typeName);
+                        }
+                    }
+
+                    // Create import statement if we have types
+                    if (typeNames.size > 0) {
+                        const importStatement = `import type { ${Array.from(typeNames).join(', ')} } from '~/types/model'`;
+
+                        // Add import statement as a separate code sample
+                        operation['x-codeSamples'].push({
+                            lang: 'javascript',
+                            label: 'TS Import Statement',
+                            source: importStatement
+                        });
+                    }
+
+                    // Add the type definitions as before
+                    operation['x-codeSamples'].push({
+                        lang: 'javascript',
+                        label: 'TS',
+                        source: typeDefinitions
+                    });
+                }
+            }
+        }
+    }
+
+    function parseTypesByRequest(typesText) {
+        const typesMap = {};
+        const typeSections = typesText.split('/**'); // Split by multi-line comment start
+
+        typeSections.forEach(section => {
+            const requestMatch = section.match(/@request\s+(\w+):(.+)\s*/);
+
+            if (requestMatch) {
+                const method = requestMatch[1];
+                const path = requestMatch[2].trim();
+                const requestKey = `${method.toUpperCase()}:${path}`;
+
+                // Capture the namespace block without comments
+                const namespaceMatch = section.match(/namespace\s+(\w+)\s+{([\s\S]+?)}/);
+                if (namespaceMatch) {
+                    section = section.replace(/\*.*$/gm, '').trim();
+                    let relevantTypes = section;
+
+                    // Extract referenced types from RequestBody and ResponseBody
+                    const additionalTypes = extractReferencedTypes(section, typesText);
+                    relevantTypes += `\n${additionalTypes}`;
+
+                    typesMap[requestKey] = relevantTypes;
+                }
+            }
+        });
+
+        return typesMap;
+    }
+
+    function extractReferencedTypes(section, typesText, processedTypes = new Set()) {
+        let additionalTypes = '';
+
+        // Find all types referenced in RequestBody and ResponseBody
+        const typeRegex = /(?:RequestBody|ResponseBody)\s*=\s*([A-Za-z0-9_]+)/g;
+        const matches = [...section.matchAll(typeRegex)];
+        const referencedTypeNames = new Set(matches.map(match => match[1]));
+
+        // For each referenced type, find its definition in the types file
+        referencedTypeNames.forEach(typeName => {
+            // Skip if we've already processed this type to avoid infinite recursion
+            if (processedTypes.has(typeName)) {
+                return;
+            }
+            processedTypes.add(typeName);
+
+            let typeDefinition = '';
+
+            // Look for interface definitions
+            const typeDefRegex = new RegExp(
+                `export\\s+(type|interface)\\s+${typeName}\\s*(?:=\\s*{|{)[\\s\\S]*?(?:};|})`,
+                'g'
+            );
+            const matches = [...typesText.matchAll(typeDefRegex)];
+            matches.forEach(match => {
+                typeDefinition = match[0];
+            });
+
+            // Look for type aliases if no interface definition found
+            if (!typeDefinition) {
+                const typeAliasRegex = new RegExp(
+                    `export\\s+type\\s+${typeName}\\s*=\\s*[^{][^;]*;`,
+                    'g'
+                );
+                const aliasMatches = [...typesText.matchAll(typeAliasRegex)];
+                aliasMatches.forEach(match => {
+                    typeDefinition = match[0];
+                });
+            }
+
+            if (typeDefinition) {
+                // Add two newlines before each type definition for better readability
+                additionalTypes += additionalTypes ? '\n\n' + typeDefinition : typeDefinition;
+
+                // Find nested type references in the type definition
+                const nestedTypeRegex = /(?::|=)\s*([A-Z][A-Za-z0-9_]*)/g;
+                const nestedMatches = [...typeDefinition.matchAll(nestedTypeRegex)];
+                const nestedTypes = nestedMatches.map(match => match[1]);
+
+                // Recursively process nested types
+                nestedTypes.forEach(nestedType => {
+                    if (!processedTypes.has(nestedType)) {
+                        const nestedDefinitions = extractReferencedTypes(
+                            `RequestBody = ${nestedType}`, // Create a dummy section to reuse the same logic
+                            typesText,
+                            processedTypes
+                        );
+                        if (nestedDefinitions) {
+                            // Add two newlines before nested definitions
+                            additionalTypes += '\n\n' + nestedDefinitions;
+                        }
+                    }
+                });
+            }
+        });
+
+        return additionalTypes.trim();
+    }
+
+
+    </script>
+
+</body>
+</html>

@@ -10,6 +10,7 @@ import {
   GetRouteResponseContentType,
   Header,
   IsValidURL,
+  Methods,
   MimeTypesWithTemplating,
   ParsedJSONBodyMimeTypes,
   ParsedXMLBodyMimeTypes,
@@ -33,7 +34,7 @@ import busboy from 'busboy';
 import cookieParser from 'cookie-parser';
 import { EventEmitter } from 'events';
 import express, { Application, NextFunction, Request, Response } from 'express';
-import { createReadStream, readFile, readFileSync, statSync } from 'fs';
+import { createReadStream, mkdirSync, readFile, readFileSync, statSync } from 'fs';
 import type { RequestListener } from 'http';
 import {
   IncomingMessage,
@@ -47,7 +48,7 @@ import {
 } from 'https';
 import killable from 'killable';
 import { lookup as mimeTypeLookup } from 'mime-types';
-import { basename, extname } from 'path';
+import { basename, extname, join } from 'path';
 import { match } from 'path-to-regexp';
 import { parse as qsParse } from 'qs';
 import rangeParser from 'range-parser';
@@ -69,11 +70,12 @@ import {
   CreateCallbackInvocation,
   CreateInFlightRequest,
   CreateTransaction,
+  TransformHeaders,
   dedupSlashes,
   isBodySupportingMethod,
   preparePath,
   resolvePathFromEnvironment,
-  routesFromFolder
+  routesFromFolder,
 } from '../utils';
 import { createAdminEndpoint } from './admin-api';
 import { CrudRouteIds, crudRoutesBuilder, databucketActions } from './crud';
@@ -93,6 +95,7 @@ import {
  */
 export class MockoonServer extends (EventEmitter as new () => TypedEmitter<ServerEvents>) {
   private serverInstance: httpServer | httpsServer;
+  private docServerInstance: httpServer | httpsServer;
   private webSocketServers: WebSocketServer[] = [];
   private tlsOptions: SecureContextOptions = {};
   private processedDatabuckets: ProcessedDatabucket[] = [];
@@ -108,7 +111,8 @@ export class MockoonServer extends (EventEmitter as new () => TypedEmitter<Serve
     maxTransactionLogs: defaultMaxTransactionLogs,
     enableRandomLatency: false,
     maxFileUploads: 10,
-    maxFileSize: 10 * 1024 * 1024 // 10MB
+    maxFileSize: 10 * 1024 * 1024, // 10MB
+    doc: false
   };
   private transactionLogs: Transaction[] = [];
 
@@ -130,6 +134,46 @@ export class MockoonServer extends (EventEmitter as new () => TypedEmitter<Serve
    */
   public start(): void {
     const requestListener = this.createRequestListener();
+
+    // Create and start documentation server if enabled
+    if (this.options.doc) {
+      const docApp = express();
+      const publicPath = join(__dirname, '../../../cjs/public');
+      
+      // Ensure public directory exists
+      mkdirSync(publicPath, { recursive: true });
+      
+      docApp.use('/', express.static(publicPath));
+      
+      // Serve index.html at root endpoint with absolute path
+      docApp.get('/', (req, res) => {
+        res.sendFile(join(publicPath, 'index.html'));
+      });
+
+      // Serve the API spec
+      docApp.get('/types.ts', (req, res) => {
+        res.sendFile(join(publicPath, 'model/types.ts'));
+      });
+
+      docApp.get('/type', (req, res) => {
+        res.type('text/plain').sendFile(join(publicPath, 'model/types.ts'));
+      });
+
+      // Create doc server on port + 1
+      this.docServerInstance = httpCreateServer(docApp);
+      this.docServerInstance = killable(this.docServerInstance);
+
+      this.docServerInstance.listen(
+        { port: this.environment.port + 1, host: this.environment.hostname },
+        () => {
+          this.emit('doc-server-started');
+        }
+      );
+
+      this.docServerInstance.on('error', (error: NodeJS.ErrnoException) => {
+        this.emit('error', ServerErrorCodes.UNKNOWN_SERVER_ERROR, error);
+      });
+    }
 
     const routes = this.getRoutesOfEnvironment();
     const webSocketRoutes = routes.filter((route) => {
@@ -221,6 +265,14 @@ export class MockoonServer extends (EventEmitter as new () => TypedEmitter<Serve
       this.webSocketServers.forEach((wss) => wss.close());
     }
     BroadcastContext.getInstance().closeAll();
+    
+    // Stop doc server if it exists
+    if (this.docServerInstance) {
+      this.docServerInstance.kill(() => {
+        this.emit('doc-server-stopped');
+      });
+    }
+
     if (this.serverInstance) {
       this.serverInstance.kill(() => {
         this.emit('stopped');
@@ -1091,8 +1143,70 @@ export class MockoonServer extends (EventEmitter as new () => TypedEmitter<Serve
     }
   }
 
+
   private createRouteHandler(route: Route, crudId?: CrudRouteIds) {
-    return (request: Request, response: Response, next: NextFunction) => {
+    return async (request: Request, response: Response, next: NextFunction) => {
+      // Handle proxy first if enabled
+      if (this.environment.proxyFirst && this.environment.proxyMode && IsValidURL(this.environment.proxyHost)) {
+        try {
+          request.proxied = true;
+          const proxyUrl = new URL(request.url, this.environment.proxyHost).toString();
+
+          const proxyOptions: RequestInit = {
+            method: request.method,
+            headers: {...request.headers} as HeadersInit,
+          };
+
+          if (isBodySupportingMethod(request.method as Methods)) {
+            proxyOptions.body = request.rawBody;
+          }
+
+          const proxyResponse = await fetch(proxyUrl, proxyOptions);
+
+          // Only proceed with response if status < 400
+          if (proxyResponse.status < 400) {
+            // Convert proxy headers to our Header format
+            const proxyHeaders: Record<string, string> = {};
+            proxyResponse.headers.forEach((value, key) => {
+              proxyHeaders[key] = value;
+            });
+            
+            const transformedHeaders = TransformHeaders(proxyHeaders);
+
+            // Handle the response body
+            if (proxyResponse.body) {
+              const contentType = proxyResponse.headers.get('content-type');
+              let content: string | object;
+              
+              if (contentType?.includes('application/json')) {
+                // For JSON, keep it as an object to let serveBody handle the stringification
+                content = await proxyResponse.json();
+              } else if (contentType?.includes('text/')) {
+                content = await proxyResponse.text();
+              } else {
+                const arrayBuffer = await proxyResponse.arrayBuffer();
+                content = Buffer.from(arrayBuffer).toString();
+              }
+
+              // @ts-expect-error this content is capable to serve json
+              this.serveBody(content, route, {
+                ...route.responses[0], // use first response as base
+                statusCode: proxyResponse.status,
+                headers: transformedHeaders,
+                bodyType: BodyTypes.INLINE,
+                disableTemplating: true // disable templating for proxy responses
+              }, request, response, false);
+            } else {
+              response.end();
+            }
+            return;
+          }
+        } catch (error) {
+          // Log proxy error but continue to mock route
+          this.emit('error', ServerErrorCodes.PROXY_ERROR, error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+      
       this.generateRequestDatabuckets(route, this.environment, request);
 
       // refresh environment data to get route changes that do not require a restart (headers, body, etc)
@@ -1601,7 +1715,7 @@ export class MockoonServer extends (EventEmitter as new () => TypedEmitter<Serve
       if (
         (MimeTypesWithTemplating.includes(fileMimeType) ||
           FileExtensionsWithTemplating.includes(extname(filePath))) &&
-        !routeResponse.disableTemplating
+          !routeResponse.disableTemplating
       ) {
         readFile(filePath, (readError, data) => {
           if (readError) {

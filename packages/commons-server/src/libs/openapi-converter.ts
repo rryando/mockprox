@@ -15,9 +15,11 @@ import {
   RouteResponse,
   RouteType
 } from '@mockoon/commons';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { OpenAPI, OpenAPIV2, OpenAPIV3 } from 'openapi-types';
+import { join } from 'path';
+import { generateModelFromSwagger } from './openapi-to-ts-def';
 import { routesFromFolder } from './utils';
-
 type SpecificationVersions = 'SWAGGER' | 'OPENAPI_V3';
 
 /**
@@ -28,6 +30,45 @@ type SpecificationVersions = 'SWAGGER' | 'OPENAPI_V3';
  *
  */
 export class OpenAPIConverter {
+  private defaultPropertyNameFactories = {
+    // url: () => "{{faker 'internet.url'}}",
+    email: () => "{{faker 'internet.email'}}",
+    name: () => "{{faker 'person.fullName'}}",
+    firstName: () => "{{faker 'person.firstName'}}",
+    lastName: () => "{{faker 'person.lastName'}}",
+    phone: () => "{{faker 'phone.number'}}",
+    address: () => "{{faker 'location.streetAddress'}}",
+    city: () => "{{faker 'location.city'}}",
+    country: () => "{{faker 'location.country'}}",
+    zipCode: () => "{{faker 'location.zipCode'}}",
+    avatar: () => "{{faker 'internet.avatar'}}",
+    username: () => "{{faker 'internet.userName'}}",
+    password: () => "{{faker 'internet.password'}}"
+  };
+
+  private loadPropertyNameFactories(customFactoriesPath?: string) {
+    if (!customFactoriesPath) {
+      return this.defaultPropertyNameFactories;
+    }
+
+    try {
+      const absolutePath = require.resolve(customFactoriesPath, {
+        paths: [process.cwd()]
+      });
+      
+      const customFactories = require(absolutePath);
+      
+      // Create a new object for merging
+      const mergedFactories = Object.assign(this.defaultPropertyNameFactories, customFactories);
+      
+      
+      return mergedFactories;
+    } catch (error) {
+      console.error('Error loading custom factories:', error);
+      return this.defaultPropertyNameFactories;
+    }
+  }
+
   /**
    * Import Swagger or OpenAPI format
    *
@@ -36,7 +77,8 @@ export class OpenAPIConverter {
    */
   public async convertFromOpenAPI(
     filePath: string,
-    port?: number
+    port?: number,
+    customFactoriesPath?: string
   ): Promise<Environment | null> {
     // .bind() due to https://github.com/APIDevTools/json-schema-ref-parser/issues/139#issuecomment-940500698
     const parsedAPI: OpenAPI.Document = await openAPI.dereference.bind(openAPI)(
@@ -46,10 +88,74 @@ export class OpenAPIConverter {
       }
     );
 
+    
+
+    // Download and store OpenAPI spec file
+    if (filePath.startsWith('http')) {
+      const response = await fetch(filePath);
+      const fileContent = await response.text();
+      
+      // Create public directory if it doesn't exist
+      const publicPath = join(__dirname, '../public');
+      mkdirSync(publicPath, { recursive: true });
+
+      // Get file extension from URL or default to .json
+      const fileExtension = filePath.split('.').pop() || 'json';
+      const specFileName = `api-spec.${fileExtension}`;
+      
+      // Write downloaded spec to file
+      const specPath = join(publicPath, specFileName);
+      writeFileSync(specPath, fileContent);
+
+      await generateModelFromSwagger({
+        fileName: 'model',
+        swaggerFile: specPath,
+        ouputDir: publicPath+'/model',
+        callback: () => {}
+      });
+
+      // Update index.html with spec path
+      const indexPath = join(publicPath, 'index.html');
+      let indexContent = readFileSync(indexPath, 'utf8');
+      indexContent = indexContent.replace('OPEN_API_FILE_PATH', `./${specFileName}`);
+      writeFileSync(indexPath, indexContent);
+    } else {
+      // Handle local file
+      const fileContent = readFileSync(filePath, 'utf8');
+      
+      // Create public directory if it doesn't exist
+      const publicPath = join(__dirname, '../public');
+      mkdirSync(publicPath, { recursive: true });
+
+      // Get file extension from local path or default to .json
+      const fileExtension = filePath.split('.').pop() || 'json';
+      const specFileName = `api-spec.${fileExtension}`;
+
+      // Copy local file to public directory
+      const specPath = join(publicPath, specFileName);
+      writeFileSync(specPath, fileContent);
+
+      console.log(specPath)
+
+      await generateModelFromSwagger({
+        fileName: 'types',
+        swaggerFile: specPath,
+        ouputDir: publicPath+'/model',
+        callback: () => {}
+      });
+      // Update index.html with spec path
+      const indexPath = join(publicPath, 'index.html');
+      let indexContent = readFileSync(indexPath, 'utf8');
+      indexContent = indexContent.replace('OPEN_API_FILE_PATH', `./${specFileName}`);
+      writeFileSync(indexPath, indexContent);
+
+      
+    }
+
     if (this.isSwagger(parsedAPI)) {
-      return this.convertFromSwagger(parsedAPI, port);
+      return this.convertFromSwagger(parsedAPI, port, customFactoriesPath);
     } else if (this.isOpenAPIV3(parsedAPI)) {
-      return this.convertFromOpenAPIV3(parsedAPI, port);
+      return this.convertFromOpenAPIV3(parsedAPI, port, customFactoriesPath);
     }
 
     return null;
@@ -57,7 +163,6 @@ export class OpenAPIConverter {
 
   /**
    * Convert environment to OpenAPI JSON object
-   *
    *
    * @param environment
    * @throws {Error}
@@ -72,6 +177,9 @@ export class OpenAPIConverter {
       environment.routes
     );
 
+    // Calculate docs port - use environment port + 1
+    const docsPort = environment.port + 1;
+
     const openAPIEnvironment: OpenAPIV3.Document = {
       openapi: '3.0.0',
       info: { title: environment.name, version: '1.0.0' },
@@ -79,7 +187,14 @@ export class OpenAPIConverter {
         {
           url: `${
             environment.tlsOptions.enabled ? 'https' : 'http'
-          }://localhost:${environment.port}/${environment.endpointPrefix}`
+          }://localhost:${environment.port}/${environment.endpointPrefix}`,
+          description: 'API Server'
+        },
+        {
+          url: `${
+            environment.tlsOptions.enabled ? 'https' : 'http'
+          }://localhost:${docsPort}/docs`,
+          description: 'Documentation Server'
         }
       ],
       paths: routes.reduce<OpenAPIV3.PathsObject>((paths, route) => {
@@ -185,13 +300,16 @@ export class OpenAPIConverter {
    */
   private convertFromSwagger(
     parsedAPI: OpenAPIV2.Document,
-    port?: number
+    port?: number,
+    customFactoriesPath?: string
   ): Environment {
     const newEnvironment = BuildEnvironment({
       hasDefaultHeader: false,
       hasDefaultRoute: false,
       port
     });
+
+    console.log(parsedAPI)
 
     // parse the port
     newEnvironment.port =
@@ -204,7 +322,7 @@ export class OpenAPIConverter {
 
     newEnvironment.name = parsedAPI.info.title || 'Swagger import';
 
-    newEnvironment.routes = this.createRoutes(parsedAPI, 'SWAGGER');
+    newEnvironment.routes = this.createRoutes(parsedAPI, 'SWAGGER', customFactoriesPath);
 
     newEnvironment.rootChildren = newEnvironment.routes.map((route) => ({
       type: 'route',
@@ -221,7 +339,8 @@ export class OpenAPIConverter {
    */
   private convertFromOpenAPIV3(
     parsedAPI: OpenAPIV3.Document,
-    port?: number
+    port?: number,
+    customFactoriesPath?: string
   ): Environment {
     const newEnvironment = BuildEnvironment({
       hasDefaultHeader: false,
@@ -250,7 +369,7 @@ export class OpenAPIConverter {
 
     newEnvironment.name = parsedAPI.info.title || 'OpenAPI import';
 
-    newEnvironment.routes = this.createRoutes(parsedAPI, 'OPENAPI_V3');
+    newEnvironment.routes = this.createRoutes(parsedAPI, 'OPENAPI_V3', customFactoriesPath);
 
     newEnvironment.rootChildren = newEnvironment.routes.map((route) => ({
       type: 'route',
@@ -268,15 +387,18 @@ export class OpenAPIConverter {
    */
   private createRoutes(
     parsedAPI: OpenAPIV2.Document,
-    version: 'SWAGGER'
+    version: 'SWAGGER',
+    customFactoriesPath?: string
   ): Route[];
   private createRoutes(
     parsedAPI: OpenAPIV3.Document,
-    version: 'OPENAPI_V3'
+    version: 'OPENAPI_V3',
+    customFactoriesPath?: string
   ): Route[];
   private createRoutes(
     parsedAPI: OpenAPIV2.Document & OpenAPIV3.Document,
-    version: SpecificationVersions
+    version: SpecificationVersions,
+    customFactoriesPath?: string
   ): Route[] {
     const routes: Route[] = [];
 
@@ -345,10 +467,11 @@ export class OpenAPIConverter {
 
               routeResponses.push(
                 this.buildResponse(
-                  schema ? this.generateSchema(schema) : undefined,
+                  schema ? this.generateSchema(schema, customFactoriesPath) : undefined,
                   routeResponse.description || '',
                   responseStatus === 'default' ? 200 : statusCode,
-                  headers
+                  headers,
+                  customFactoriesPath
                 )
               );
 
@@ -362,7 +485,8 @@ export class OpenAPIConverter {
                     example.body,
                     example.label,
                     responseStatus === 'default' ? 200 : statusCode,
-                    headers
+                    headers,
+                    customFactoriesPath
                   )
                 );
                 routeResponses.push(...routeResponseExamples);
@@ -461,16 +585,28 @@ export class OpenAPIConverter {
     body: object | undefined,
     label: string,
     statusCode: number,
-    headers: Header[]
+    headers: Header[],
+    customFactoriesPath?: string
   ) {
+    let formattedBody = '';
+    if (body !== undefined) {
+      // If body is a string, try to parse it as JSON first
+      if (typeof body === 'string') {
+        try {
+          const parsedBody = JSON.parse(body);
+          formattedBody = JSON.stringify(parsedBody, null, INDENT_SIZE);
+        } catch {
+          formattedBody = body;
+        }
+      } else {
+        formattedBody = JSON.stringify(body, null, INDENT_SIZE);
+      }
+      formattedBody = this.convertJSONSchemaPrimitives(formattedBody);
+    }
+
     return {
       ...BuildRouteResponse(),
-      body:
-        body !== undefined
-          ? this.convertJSONSchemaPrimitives(
-              JSON.stringify(body, null, INDENT_SIZE)
-            )
-          : '',
+      body: formattedBody,
       label,
       statusCode,
       headers
@@ -532,14 +668,17 @@ export class OpenAPIConverter {
    *
    */
   private generateSchema(
-    schema: OpenAPIV2.SchemaObject | OpenAPIV3.SchemaObject
+    schema: OpenAPIV2.SchemaObject | OpenAPIV3.SchemaObject,
+    customFactoriesPath?: string
   ) {
+    const propertyNameFactories = this.loadPropertyNameFactories(customFactoriesPath);
+
     const typeFactories = {
       integer: () => "{{faker 'number.int' max=99999}}",
       number: () => "{{faker 'number.int' max=99999}}",
       number_float: () => "{{faker 'number.float'}}",
       number_double: () => "{{faker 'number.float'}}",
-      string: () => '',
+      string: () => "{{faker 'lorem.sentence' min=3 max=5}}",
       string_date: () => "{{date '2019' (now) 'yyyy-MM-dd'}}",
       'string_date-time': () => "{{faker 'date.recent' 365}}",
       string_email: () => "{{faker 'internet.email'}}",
@@ -547,7 +686,6 @@ export class OpenAPIConverter {
       boolean: () => "{{faker 'datatype.boolean'}}",
       array: (arraySchema) => {
         const newObject = this.generateSchema(arraySchema.items);
-
         return arraySchema.collectionFormat === 'csv' ? newObject : [newObject];
       },
       object: (objectSchema) => {
@@ -556,9 +694,15 @@ export class OpenAPIConverter {
 
         if (properties) {
           Object.keys(properties).forEach((propertyName) => {
-            newObject[propertyName] = this.generateSchema(
-              properties[propertyName]
-            );
+            // Check if we have a special factory for this property name
+            if (propertyNameFactories[propertyName]) {
+              newObject[propertyName] = propertyNameFactories[propertyName]();
+            } else {
+              newObject[propertyName] = this.generateSchema(
+                properties[propertyName],
+                customFactoriesPath
+              );
+            }
           });
         }
 
