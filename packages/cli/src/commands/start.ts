@@ -175,7 +175,8 @@ export default class Start extends Command {
           disableTls: userFlags['disable-tls'],
           maxTransactionLogs: userFlags['max-transaction-logs'],
           enableRandomLatency: userFlags['enable-random-latency'],
-          doc: userFlags['doc']
+          doc: userFlags['doc'],
+          
         });
       }
     } catch (error) {
@@ -202,7 +203,8 @@ export default class Start extends Command {
       disableTls: parameters.disableTls,
       maxTransactionLogs: parameters.maxTransactionLogs,
       enableRandomLatency: parameters.enableRandomLatency,
-      doc: parameters.doc
+      doc: parameters.doc,
+      
     });
 
     listenServerEvents(

@@ -34,6 +34,7 @@ export const EnvironmentDefault: Environment = {
   folders: [],
   routes: [],
   rootChildren: [],
+  proxyFirst: false,
   proxyMode: false,
   proxyHost: '',
   proxyRemovePrefix: false,
@@ -457,6 +458,9 @@ export const EnvironmentSchema = Joi.object<Environment, true>({
   routes: Joi.array()
     .items(RouteSchema, Joi.any().strip())
     .failover(EnvironmentDefault.routes)
+    .required(),
+  proxyFirst: Joi.boolean()
+    .failover(EnvironmentDefault.proxyFirst)
     .required(),
   proxyMode: Joi.boolean().failover(EnvironmentDefault.proxyMode).required(),
   proxyHost: Joi.string()

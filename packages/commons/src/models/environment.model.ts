@@ -57,6 +57,7 @@ export type Environment = {
   folders: Folder[];
   routes: Route[];
   rootChildren: FolderChild[];
+  proxyFirst: boolean;
   proxyMode: boolean;
   proxyRemovePrefix: boolean;
   proxyHost: string;
