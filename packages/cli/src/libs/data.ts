@@ -71,18 +71,24 @@ export const parseDataFiles = async (
   userOptions: {
     ports: number[];
     hostnames: string[];
-  } = { ports: [], hostnames: [] },
+    proxyMode: boolean;
+    proxyHost: string;
+    proxyFirst: boolean;
+    customFactoriesPath: string;
+  } = { ports: [], hostnames: [], proxyMode: false, proxyHost: '', proxyFirst: false, customFactoriesPath: '' },
   repair = false
 ): Promise<{ originalPath: string; environment: Environment }[]> => {
   const openAPIConverter = new OpenAPIConverter();
   const environments: { originalPath: string; environment: Environment }[] = [];
+
   let errorMessage = `${CLIMessages.DATA_INVALID}:`;
 
   for (const [index, filePath] of filePaths.entries()) {
     let environment: Environment | null = null;
 
     try {
-      environment = await openAPIConverter.convertFromOpenAPI(filePath);
+      environment = await openAPIConverter.convertFromOpenAPI(filePath, userOptions.ports[index], userOptions.customFactoriesPath);
+
     } catch (openAPIError) {
       if (openAPIError instanceof Error) {
         errorMessage += `\nOpenAPI parser: ${openAPIError.message}`;
@@ -125,6 +131,12 @@ export const parseDataFiles = async (
 
       if (userOptions.hostnames[index] !== undefined) {
         environment.hostname = userOptions.hostnames[index];
+      }
+
+      if (userOptions.proxyMode) {
+        environment.proxyMode = userOptions.proxyMode;
+        environment.proxyHost = userOptions.proxyHost;
+        environment.proxyFirst = userOptions.proxyFirst;
       }
 
       environments.push({ environment, originalPath: filePath });

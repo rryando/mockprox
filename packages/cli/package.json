@@ -14,7 +14,8 @@
   "scripts": {
     "lint": "eslint",
     "test": "glob -c \"node --import tsx --test-concurrency 1 --test\" \"./test/specs/**/*.test.ts\"",
-    "build": "rm -rf dist && tsc -b tsconfig-build.json && oclif manifest"
+    "build": "rm -rf dist && tsc -b tsconfig-build.json && oclif manifest",
+    "start": "node ./bin/run.js start"
   },
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",

@@ -30,7 +30,10 @@ export default class Start extends Command {
     '$ mockoon-cli start --data https://file-server/data.json',
     '$ mockoon-cli start --data ~/data.json --log-transaction',
     '$ mockoon-cli start --data ~/data.json --disable-routes route1 route2',
-    '$ mockoon-cli start --data ~/data.json --enable-random-latency'
+    '$ mockoon-cli start --data ~/data.json --enable-random-latency',
+    '$ mockoon-cli start --data ~/data.json --proxy-url https://your-proxy-url --proxy-first',
+    '$ mockoon-cli start --data ~/data.json --faker-factory ./your-faker-factories.js',
+    '$ mockoon-cli start --data ~/data.json --doc'
   ];
 
   public static flags = {
@@ -100,6 +103,22 @@ export default class Start extends Command {
       description:
         'Enable random latency from 0 to value specified in the route settings',
       default: false
+    }),
+    'proxy-url': Flags.string({
+      description: 'Enable proxy mode and specify the proxy URL',
+      default: undefined
+    }),
+    'proxy-first': Flags.boolean({
+      description: 'Proxy requests to the API before sending them to the route',
+      default: false
+    }),
+    'faker-factory': Flags.string({
+      description: 'Path to a custom Faker.js factories file',
+      default: undefined
+    }),
+    'doc': Flags.boolean({
+      description: 'Generate API documentation',
+      default: false
     })
   };
 
@@ -122,7 +141,11 @@ export default class Start extends Command {
         userFlags.data,
         {
           ports: userFlags.port,
-          hostnames: userFlags.hostname
+          hostnames: userFlags.hostname,
+          proxyMode: userFlags['proxy-url'] !== undefined,
+          proxyHost: userFlags['proxy-url'],
+          proxyFirst: userFlags['proxy-first'],
+          customFactoriesPath: userFlags['faker-factory']
         },
         userFlags.repair
       );
@@ -151,7 +174,8 @@ export default class Start extends Command {
           enableAdminApi: !userFlags['disable-admin-api'],
           disableTls: userFlags['disable-tls'],
           maxTransactionLogs: userFlags['max-transaction-logs'],
-          enableRandomLatency: userFlags['enable-random-latency']
+          enableRandomLatency: userFlags['enable-random-latency'],
+          doc: userFlags['doc']
         });
       }
     } catch (error) {
@@ -177,7 +201,8 @@ export default class Start extends Command {
       enableAdminApi: parameters.enableAdminApi,
       disableTls: parameters.disableTls,
       maxTransactionLogs: parameters.maxTransactionLogs,
-      enableRandomLatency: parameters.enableRandomLatency
+      enableRandomLatency: parameters.enableRandomLatency,
+      doc: parameters.doc
     });
 
     listenServerEvents(
