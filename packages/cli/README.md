@@ -140,6 +140,8 @@ OPTIONS
       --max-transaction-logs   Maximum number of transaction logs to keep in memory for retrieval via the admin API (default: 100)
       --enable-random-latency  Randomize global and responses latencies between 0 and the specified value (default: false)
   -h, --help                   Show CLI help
+  --proxy-url                  Proxy all requests to the specified URL
+  --proxy-first                Proxy all requests to the specified URL before the mock route (default: false)
 
 EXAMPLES
   $ mockoon-cli start --data ~/data.json
@@ -147,6 +149,7 @@ EXAMPLES
   $ mockoon-cli start --data https://file-server/data.json
   $ mockoon-cli start --data ~/data.json --log-transaction
   $ mockoon-cli start --data ~/data.json --disable-routes route1 route2 folder1
+  $ mockoon-cli start --data ~/data.json --proxy-url https://your-proxy-url --proxy-first
 ```
 
 #### Admin API
