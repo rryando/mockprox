@@ -13,8 +13,6 @@ Feed it with a Mockprox's data file, or OpenAPI specification file (JSON or YAML
 
 The CLI supports powerful features including: templating system, advanced proxy mode, route response rules, and more.
 
-![Mockprox CLI screenshot](https://mockoon.com/images/cli-hero-repo.png)
-
 ## Table of Contents
 
 - [Installation](#installation)
