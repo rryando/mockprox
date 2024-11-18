@@ -1,12 +1,12 @@
 ## ❤️ Built on Mockoon
 
-@mockprox/cli is built upon the excellent work of [Mockoon](https://mockoon.com). We extend our sincere appreciation to the Mockoon team for their outstanding CLI implementation and commitment to open-source development. If you appreciate this tool, please consider:
+mockprox-cli is built upon the excellent work of [Mockoon](https://mockoon.com). We extend our sincere appreciation to the Mockoon team for their outstanding CLI implementation and commitment to open-source development. If you appreciate this tool, please consider:
 
 - ⭐ Starring [Mockoon's repository](https://github.com/mockoon/mockoon)
 - 💝 [Supporting their work](https://github.com/sponsors/mockoon)
 - 🌟 Checking out [Mockoon's CLI](https://github.com/mockoon/mockoon/tree/main/packages/cli)
 
-## About @mockprox/cli
+## About mockprox-cli
 
 Welcome to Mockprox's official CLI, a lightweight and fast NPM package to deploy your mock APIs anywhere.
 Feed it with a Mockprox's data file, or OpenAPI specification file (JSON or YAML), and you are good to go.
@@ -35,11 +35,19 @@ The CLI supports powerful features including: templating system, advanced proxy 
 - [Support/feedback](#supportfeedback)
 - [Contributing](#contributing)
 
-## Installation
+## Getting started
+
 
 ```sh-session
-$ npm install -g @mockprox/cli
+$ npx mockprox-cli start --data ~/path/to/your-environment-file.json
 ```
+or install globally
+
+```sh-session
+$ npm install -g mockprox-cli
+
+```
+
 
 Usage:
 
@@ -51,7 +59,7 @@ $ mockprox-cli COMMAND
 
 ### Use your Mockprox environment file
 
-The CLI can import and migrate data from older versions. However, it doesn't alter the file you provide and only migrates a copy. If you created your mock with a more recent version of the application, you need to update your CLI with: `npm install -g @mockprox/cli`.
+The CLI can import and migrate data from older versions. However, it doesn't alter the file you provide and only migrates a copy. If you created your mock with a more recent version of the application, you need to update your CLI with: `npm install -g mockprox-cli`.
 
 Run your mock using the [start command](#start-command):
 
