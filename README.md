@@ -9,9 +9,9 @@ We highly encourage you to:
 
 ## About Mockprox
 
-Mockprox enhances Mockoon's foundation with additional features focused on advanced proxy capabilities and extended mocking functionality. We offer both a desktop application and CLI for local development.
+Mockprox enhances Mockoon's foundation with additional features focused on advanced proxy capabilities and extended mocking functionality. We offer both CLI for improving developer experience especially for frontend developers.
 
-Mockprox is a powerful yet simple tool for API mocking, forked from the excellent [Mockoon](https://mockoon.com) project. It offers both a desktop application and CLI for local development, with enhanced proxy and mocking capabilities.
+Mockprox is a powerful yet simple tool for API mocking, forked from the excellent [Mockoon](https://mockoon.com) project with enhanced proxy and mocking capabilities.
 
 ## Key Features
 
@@ -26,9 +26,3 @@ Mockprox is a powerful yet simple tool for API mocking, forked from the excellen
 - 🔄 Proxy-first request handling
 - 🛠 Custom factory support
 
-## Quick Start
-
-### Desktop App
-Download from [mockprox.com/download](https://mockprox.com/download/) or install via:
-
-**MacOS:**
