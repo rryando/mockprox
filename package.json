@@ -1,20 +1,22 @@
 {
-  "name": "@mockoon/mockoon",
-  "private": true,
+  "name": "mockprox",
+  "private": false,
   "version": "1.0.0",
   "author": {
-    "name": "Mockoon (1kB SARL-S)",
-    "email": "team@mockoon.com",
-    "url": "https://mockoon.com/"
+    "name": "Ryan Rynaldo",
+    "email": "rynaldo.dev@gmail.com",
+    "url": "https://github.com/rryando"
   },
-  "description": "Mockoon is the easiest and quickest way to run mock APIs locally. No remote deployment, no account required, open source.",
+  "description": "Mockprox is a CLI tool modified from mockoon for creating mock APIs. including proxy + doc server.",
   "license": "MIT",
-  "repository": "https://github.com/mockoon/mockoon",
-  "homepage": "https://mockoon.com",
-  "bugs": {
-    "url": "https://github.com/mockoon/mockoon/issues"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rryando/mockprox"
   },
-  "funding": "https://mockoon.com/sponsor-us/",
+  "homepage": "https://github.com/rryando",
+  "bugs": {
+    "url": "https://github.com/rryando/mockprox/issues"
+  },
   "prettier": {
     "singleQuote": true,
     "tabWidth": 2,
@@ -30,15 +32,15 @@
     "format:write": "lerna exec -- prettier \"{src,test}/**/*.{ts,js,scss,html}\" --no-error-on-unmatched-pattern --write",
     "set-versions": "lerna version --exact --no-push --no-git-tag-version",
     "publish": "lerna publish --yes --no-verify-access from-package",
-    "build:commons": "lerna run --stream --scope @mockoon/commons build",
-    "build:commons-server": "lerna run --stream --scope @mockoon/commons-server build",
-    "build:libs": "lerna run --stream --scope @mockoon/commons build && lerna run --scope @mockoon/commons-server build",
-    "build:libs:watch": "concurrently \"lerna run --stream --scope @mockoon/commons build:watch\" \"lerna run --scope @mockoon/commons-server build:watch\"",
-    "build:cli": "lerna run --stream --scope @mockoon/cli build",
-    "test:commons": "lerna run --stream --scope @mockoon/commons test",
-    "test:commons-server": "lerna run --stream --scope @mockoon/commons-server test",
-    "test:libs": "lerna run --stream --scope @mockoon/commons test && lerna run --scope @mockoon/commons-server test",
-    "test:cli": "lerna run --stream --scope @mockoon/cli test"
+    "build:commons": "lerna run --stream --scope @mockprox/commons build",
+    "build:commons-server": "lerna run --stream --scope @mockprox/commons-server build",
+    "build:libs": "lerna run --stream --scope @mockprox/commons build && lerna run --scope @mockprox/commons-server build",
+    "build:libs:watch": "concurrently \"lerna run --stream --scope @mockprox/commons build:watch\" \"lerna run --scope @mockprox/commons-server build:watch\"",
+    "build:cli": "lerna run --stream --scope @mockprox/cli build",
+    "test:commons": "lerna run --stream --scope @mockprox/commons test",
+    "test:commons-server": "lerna run --stream --scope @mockprox/commons-server test",
+    "test:libs": "lerna run --stream --scope @mockprox/commons test && lerna run --scope @mockprox/commons-server test",
+    "test:cli": "lerna run --stream --scope @mockprox/cli test"
   },
   "devDependencies": {
     "@eslint/js": "9.13.0",

@@ -1,14 +1,14 @@
 {
-  "name": "@mockoon/cli",
-  "description": "Mockoon's CLI. Deploy your mock APIs anywhere.",
-  "version": "9.0.0",
+  "name": "@mockprox/cli",
+  "description": "Mockprox's CLI. Deploy your mock APIs anywhere.",
+  "version": "1.0.0",
   "author": {
-    "name": "Mockoon (1kB SARL-S)",
-    "email": "team@mockoon.com",
-    "url": "https://mockoon.com/"
+    "name": "Ryan Rynaldo",
+    "email": "rynaldo.dev@gmail.com",
+    "url": "https://github.com/rryando"
   },
   "bin": {
-    "mockoon-cli": "./bin/run.js"
+    "mockprox-cli": "./bin/run.js"
   },
   "license": "MIT",
   "scripts": {
@@ -32,23 +32,22 @@
     "hooks": {
       "init": "./dist/hooks/init"
     },
-    "bin": "mockoon-cli",
+    "bin": "mockprox-cli",
     "dirname": "cli",
     "plugins": [
       "@oclif/plugin-help"
     ],
     "topicSeparator": " "
   },
-  "repository": "https://github.com/mockoon/mockoon",
-  "homepage": "https://mockoon.com",
+  "repository": "https://github.com/rryando/mockprox",
+  "homepage": "https://github.com/rryando/mockprox",
   "bugs": {
-    "url": "https://github.com/mockoon/mockoon/issues"
+    "url": "https://github.com/rryando/mockprox/issues"
   },
-  "funding": "https://mockoon.com/sponsor-us/",
   "dependencies": {
     "@inquirer/confirm": "5.0.0",
-    "@mockoon/commons": "9.0.0",
-    "@mockoon/commons-server": "9.0.0",
+    "@mockprox/commons": "1.0.0",
+    "@mockprox/commons-server": "1.0.0",
     "@oclif/core": "4.0.30",
     "@oclif/plugin-help": "6.2.16",
     "mkdirp": "3.0.1",

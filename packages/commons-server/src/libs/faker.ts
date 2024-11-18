@@ -1,5 +1,5 @@
 import { allFakers, FakerError } from '@faker-js/faker';
-import { FakerAvailableLocales } from '@mockoon/commons';
+import { FakerAvailableLocales } from '@mockprox/commons';
 
 // Set default localisation to "en"
 let localFaker = allFakers['en'];

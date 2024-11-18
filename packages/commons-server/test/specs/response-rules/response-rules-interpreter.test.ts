@@ -5,7 +5,7 @@ import {
   ResponseMode,
   ResponseRuleTargets,
   RouteResponse
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import { Request } from 'express';
 import { strictEqual } from 'node:assert';
 import { describe, it } from 'node:test';

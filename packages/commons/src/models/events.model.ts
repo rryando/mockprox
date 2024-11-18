@@ -27,4 +27,6 @@ export type ServerEvents = {
     reason?: string | null
   ) => void;
   'ws-message-received': (request: InFlightRequest, message: string) => void;
+  'doc-server-started': () => void;
+  'doc-server-stopped': () => void;
 };

@@ -5,7 +5,7 @@ import {
   RouteResponse,
   ServerErrorCodes,
   ServerEvents
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import { readFile } from 'fs';
 import TypedEventEmitter from 'typed-emitter';
 import { RawData, WebSocket } from 'ws';

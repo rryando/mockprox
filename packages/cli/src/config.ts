@@ -2,7 +2,7 @@ import { homedir } from 'os';
 import { join } from 'path';
 
 const version = require('../package.json').version;
-const dirName = '.mockoon-cli';
+const dirName = '.mockprox-cli';
 
 export const Config: { version: string; logsPath: string } = {
   version,

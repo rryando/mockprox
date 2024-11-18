@@ -11,7 +11,7 @@ import {
   Route,
   stringIncludesArrayItems,
   Transaction
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import { Request, Response } from 'express';
 import { SafeString } from 'handlebars';
 import {

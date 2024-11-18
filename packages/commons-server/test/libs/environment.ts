@@ -1,4 +1,4 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { promises as fs } from 'fs';
 
 export async function getEnvironment(name: string): Promise<Environment> {

@@ -28,7 +28,7 @@ import {
   generateUUID,
   getLatency,
   stringIncludesArrayItems
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import appendField from 'append-field';
 import busboy from 'busboy';
 import cookieParser from 'cookie-parser';
@@ -93,7 +93,7 @@ import {
  *
  * Extends EventEmitter.
  */
-export class MockoonServer extends (EventEmitter as new () => TypedEmitter<ServerEvents>) {
+export class MockproxServer extends (EventEmitter as new () => TypedEmitter<ServerEvents>) {
   private serverInstance: httpServer | httpsServer;
   private docServerInstance: httpServer | httpsServer;
   private webSocketServers: WebSocketServer[] = [];

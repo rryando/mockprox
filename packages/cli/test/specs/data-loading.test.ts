@@ -15,14 +15,14 @@ describe('Data loading', () => {
     const { stderr } = await output;
     ok(stderr.includes('This file is not a valid OpenAPI specification'));
     ok(stderr.includes('OpenAPI parser: Error opening file'));
-    ok(stderr.includes('Mockoon parser: ENOENT: no such file or directory'));
+    ok(stderr.includes('mockprox parser: ENOENT: no such file or directory'));
   });
 
   it('should fail when the response is no valid JSON', async () => {
     const { instance, output } = await spawnCli([
       'start',
       '--data',
-      'https://mockoon.com'
+      'https://mockprox.com'
     ]);
 
     instance.kill();
@@ -31,16 +31,16 @@ describe('Data loading', () => {
     ok(stderr.includes('This file is not a valid OpenAPI specification'));
     ok(
       stderr.includes(
-        'OpenAPI parser: "https://mockoon.com/" is not a valid JSON Schema'
+        'OpenAPI parser: "https://mockprox.com/" is not a valid JSON Schema'
       )
     );
     // different error message for Node.js < or > 20
     ok(
       stderr.includes(
-        'Mockoon parser: Unexpected token \'<\', "<!DOCTYPE "... is not valid JSON'
+        'mockprox parser: Unexpected token \'<\', "<!DOCTYPE "... is not valid JSON'
       ) ||
         stderr.includes(
-          'Mockoon parser: Unexpected token < in JSON at position 0'
+          'mockprox parser: Unexpected token < in JSON at position 0'
         )
     );
   });
@@ -85,10 +85,10 @@ describe('Data loading', () => {
     // different error message for Node.js < or > 20
     ok(
       stderr.includes(
-        "Mockoon parser: Expected property name or '}' in JSON at position"
+        "mockprox parser: Expected property name or '}' in JSON at position"
       ) ||
         stderr.includes(
-          'Mockoon parser: Unexpected token D in JSON at position'
+          'mockprox parser: Unexpected token D in JSON at position'
         )
     );
   });

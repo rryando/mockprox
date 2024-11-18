@@ -1,16 +1,16 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { equal } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
-import { MockoonServer } from '../../../src';
+import { MockproxServer } from '../../../src';
 import { getEnvironment } from '../../libs/environment';
 
 describe('Server should follow Faker.js options', () => {
   let testEnv: Environment;
-  let testServer: MockoonServer;
+  let testServer: MockproxServer;
 
   before(async () => {
     testEnv = await getEnvironment('test');
-    testServer = new MockoonServer(testEnv, {
+    testServer = new MockproxServer(testEnv, {
       fakerOptions: {
         seed: 1,
         locale: 'en_GB'

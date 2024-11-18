@@ -5,8 +5,8 @@ import {
   HighestMigrationId,
   Migrations,
   repairRefs
-} from '@mockoon/commons';
-import { OpenAPIConverter } from '@mockoon/commons-server';
+} from '@mockprox/commons';
+import { OpenAPIConverter } from '@mockprox/commons-server';
 import { promises as fs } from 'fs';
 import { CLIMessages } from '../constants/cli-messages.constants';
 
@@ -34,7 +34,7 @@ const migrateAndValidateEnvironment = async (
     }
   }
 
-  // environment data migrated with a more recent version (if installed CLI version does not include @mockoon/commons with required migrations)
+  // environment data migrated with a more recent version (if installed CLI version does not include @mockprox/commons with required migrations)
   if (environment.lastMigration > HighestMigrationId) {
     throw new Error(CLIMessages.DATA_TOO_RECENT_ERROR);
   }

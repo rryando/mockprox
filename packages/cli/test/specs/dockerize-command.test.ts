@@ -35,7 +35,7 @@ describe('Dockerize command', () => {
     const dockerfileContent = dockerfile.toString();
     ok(
       dockerfileContent.includes(
-        `RUN npm install -g @mockoon/cli@${Config.version}`
+        `RUN npm install -g @mockprox/cli@${Config.version}`
       )
     );
     ok(dockerfileContent.includes('COPY ./mock1.json ./mock1.json'));

@@ -1,20 +1,20 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { deepEqual, equal } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
-import { MockoonServer } from '../../../src';
+import { MockproxServer } from '../../../src';
 import { getEnvironment } from '../../libs/environment';
 
 describe('Server should handle proxy configuration', () => {
   let proxyEnv: Environment;
   let testEnv: Environment;
-  let proxyServer: MockoonServer;
-  let testServer: MockoonServer;
+  let proxyServer: MockproxServer;
+  let testServer: MockproxServer;
 
   before(async () => {
     proxyEnv = await getEnvironment('proxy');
     testEnv = await getEnvironment('test');
-    proxyServer = new MockoonServer(proxyEnv);
-    testServer = new MockoonServer(testEnv);
+    proxyServer = new MockproxServer(proxyEnv);
+    testServer = new MockproxServer(testEnv);
     testServer.start();
     proxyServer.start();
   });

@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { generateApi, generateTemplates } from 'swagger-typescript-api';
+import { generateApi, generateTemplates, SchemaComponent } from 'swagger-typescript-api';
 
 export interface GenerateModelOptions {
   fileName: string;
@@ -72,7 +72,7 @@ export const generateModelFromSwagger = async ({
         onFormatTypeName: (typeName, _rawTypeName, _schemaType) => {
           return typeName;
         },
-        // @ts-expect-error
+        // @ts-expect-error -- cleanup any comments and examples from the schema
         onPreParseSchema: (originalSchema: unknown, _typeName: string, _schemaType: string) => {
             if ((originalSchema as any)?.description) {
               delete (originalSchema as any).description;
@@ -91,14 +91,52 @@ export const generateModelFromSwagger = async ({
             delete (originalSchema as any).maxLength;
           }
 
+          if ((originalSchema as any)?.title) {
+            delete (originalSchema as any).title;
+          }
+
+          if ((originalSchema as any)?.schema) {
+            delete (originalSchema as any).schema.title;
+            delete (originalSchema as any).schema.description;
+            delete (originalSchema as any).schema.default;
+          }
+
+          if ((originalSchema as any)?.properties) {
+            // Loop through all properties and remove description
+            Object.values((originalSchema as any).properties).forEach((property: any) => {
+              if (property.description) {
+                delete property.description;
+                delete property.default;
+                delete property.title;
+              }
+            });
+          }
+
+
           return originalSchema;
         },
         onParseSchema: (_, parsedSchema: unknown) => {
+
+
           if ((parsedSchema as any)?.example) {
             delete (parsedSchema as any).example;
           }
 
           return parsedSchema;
+        },
+        onCreateRequestParams: (rawType: SchemaComponent["rawTypeData"]) => {
+          if (rawType?.properties) {
+            // Loop through all properties and remove description
+            Object.values(rawType.properties).forEach((property: any) => {
+              if (property.description) {
+                delete property.description;
+                delete property.default;
+                delete property.title;
+              }
+            });
+          }
+          
+          return rawType;
         },
         // onPrepareConfig: (currentConfiguration) => {},
       },
@@ -107,7 +145,6 @@ export const generateModelFromSwagger = async ({
     for (const { content, name } of files) {
       const filePath = path.resolve(process.cwd(), ouputDir, name);
       try {
-        console.log(content);
         await fs.writeFile(filePath, content);
       } catch (error) {
         console.error(`Error writing file ${filePath}:`, error);
