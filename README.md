@@ -1,17 +1,3 @@
-<div align="center">
-  <a href="https://mockprox.com">
-    <img width="200" height="200" src="https://mockoon.com/images/logo-square-app.png">
-  </a>
-  <br>
-  <a href="https://mockprox.com/"><img src="https://img.shields.io/badge/Website-Go-green.svg?style=flat-square&colorB=1997c6"/></a>
-  <a href="https://mockprox.com/newsletter/"><img src="https://img.shields.io/badge/Newsletter-Subscribe-green.svg?style=flat-square"/></a>
-  <a href="https://twitter.com/GetMockprox"><img src="https://img.shields.io/badge/Twitter_@GetMockprox-follow-blue.svg?style=flat-square&colorB=1da1f2"/></a>
-  <a href="https://mockprox.com/discord/"><img src="https://img.shields.io/badge/Discord-go-blue.svg?style=flat-square&colorA=6c84d9&colorB=1da1f2"/></a>  
-  <br>
-  <br>
-  <h1>Mockprox: Modern API Mocking Tool</h1>
-</div>
-
 ## ❤️ Tribute to Mockoon
 
 Mockprox is proudly built upon [Mockoon](https://mockoon.com), an exceptional open-source API mocking tool. We extend our heartfelt gratitude to the Mockoon team for their outstanding contribution to the developer community. Their commitment to open-source development has made projects like Mockprox possible.
