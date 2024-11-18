@@ -1,12 +1,12 @@
 ## ❤️ Built on Mockoon
 
-@mockprox/commons is built upon the excellent work of [Mockoon](https://mockoon.com). We extend our sincere appreciation to the Mockoon team for their outstanding implementation and commitment to open-source development. If you appreciate this tool, please consider:
+mockprox-commons is built upon the excellent work of [Mockoon](https://mockoon.com). We extend our sincere appreciation to the Mockoon team for their outstanding implementation and commitment to open-source development. If you appreciate this tool, please consider:
 
 - ⭐ Starring [Mockoon's repository](https://github.com/mockoon/mockoon)
 - 💝 [Supporting their work](https://github.com/sponsors/mockoon)
 - 🌟 Checking out [Mockoon's commons](https://github.com/mockoon/mockoon/tree/main/packages/commons)
 
-## About @mockprox/commons
+## About mockprox-commons
 
 Mockprox's Commons library contains shared code used across all Mockprox packages. It's designed for both browser and Node.js environments, with enhanced types and interfaces for advanced proxy and documentation features.
 
