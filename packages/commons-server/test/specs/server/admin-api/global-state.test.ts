@@ -1,20 +1,20 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import fetch from 'node-fetch';
 import { strictEqual } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
-import { MockoonServer } from '../../../../src';
+import { MockproxServer } from '../../../../src';
 import { getEnvironment } from '../../../libs/environment';
 
 describe('Admin API: global state', () => {
   let environment: Environment;
-  let server: MockoonServer;
+  let server: MockproxServer;
   const port = 3010;
   const url = `http://localhost:${port}`;
 
   before(async () => {
     environment = await getEnvironment('test');
     environment.port = port;
-    server = new MockoonServer(environment);
+    server = new MockproxServer(environment);
     await new Promise((resolve, reject) => {
       server.on('started', () => {
         resolve(true);

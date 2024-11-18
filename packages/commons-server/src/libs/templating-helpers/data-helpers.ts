@@ -1,4 +1,4 @@
-import { ProcessedDatabucket } from '@mockoon/commons';
+import { ProcessedDatabucket } from '@mockprox/commons';
 import { SafeString } from 'handlebars';
 import {
   del as objectDel,

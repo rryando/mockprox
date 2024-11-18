@@ -9,7 +9,7 @@ export const commonFlags = {
   }),
   data: Flags.string({
     char: 'd',
-    description: 'Path(s) or URL(s) to your Mockoon data file(s)',
+    description: 'Path(s) or URL(s) to your Mockprox data file(s)',
     required: true,
     multiple: true
   })

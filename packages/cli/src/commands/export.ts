@@ -1,4 +1,4 @@
-import { OpenAPIConverter } from '@mockoon/commons-server';
+import { OpenAPIConverter } from '@mockprox/commons-server';
 import { Command, Flags } from '@oclif/core';
 import { promises as fs } from 'fs';
 import { parseDataFiles } from '../libs/data';
@@ -8,14 +8,14 @@ export default class Export extends Command {
     'Export a mock API to an OpenAPI v3 specification file (JSON)';
 
   public static examples = [
-    '$ mockoon-cli export --input ~/data.json --output ./output.json',
-    '$ mockoon-cli export --input ~/data.json --output ./output.json --prettify'
+    '$ mockprox-cli export --input ~/data.json --output ./output.json',
+    '$ mockprox-cli export --input ~/data.json --output ./output.json --prettify'
   ];
 
   public static flags = {
     input: Flags.string({
       char: 'i',
-      description: 'Path or URL to your Mockoon data file',
+      description: 'Path or URL to your mockprox data file',
       required: true
     }),
     output: Flags.string({

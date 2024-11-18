@@ -6,11 +6,11 @@ import {
   InvokedCallback,
   Methods,
   Transaction
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import { format } from 'util';
 import { Logger } from 'winston';
 import { ServerMessages } from '../../constants/server-messages.constants';
-import { MockoonServer } from './server';
+import { MockproxServer } from './server';
 
 const authorizationHeaders = ['authorization', 'proxy-authorization'];
 const filterAuthorizationHeaders = (header: Header) => {
@@ -24,7 +24,7 @@ const filterAuthorizationHeaders = (header: Header) => {
 };
 
 export const listenServerEvents = function (
-  server: MockoonServer,
+  server: MockproxServer,
   environment: Environment,
   logger: Logger,
   logTransaction?: boolean

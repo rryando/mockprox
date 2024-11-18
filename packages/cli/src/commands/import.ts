@@ -7,8 +7,8 @@ export default class Import extends Command {
     'Import a Swagger v2/OpenAPI v3 specification file (YAML or JSON)';
 
   public static examples = [
-    '$ mockoon-cli import --input ~/data.json --output ./output.json',
-    '$ mockoon-cli import --input ~/data.json --output ./output.json --prettify'
+    '$ mockprox-cli import --input ~/data.json --output ./output.json',
+    '$ mockprox-cli import --input ~/data.json --output ./output.json --prettify'
   ];
 
   public static flags = {
@@ -20,7 +20,7 @@ export default class Import extends Command {
     output: Flags.string({
       char: 'o',
       description:
-        'Generated Mockoon path and name (e.g. `./environment.json`)',
+        'Generated mockprox path and name (e.g. `./environment.json`)',
       required: true
     }),
     prettify: Flags.boolean({

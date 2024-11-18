@@ -6,13 +6,13 @@ import {
   ServerOptions,
   defaultEnvironmentVariablesPrefix,
   defaultMaxTransactionLogs
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import {
-  MockoonServer,
+  MockproxServer,
   ServerMessages,
   createLoggerInstance,
   listenServerEvents
-} from '@mockoon/commons-server';
+} from '@mockprox/commons-server';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { format } from 'util';
@@ -25,15 +25,15 @@ export default class Start extends Command {
   public static description = 'Start one or more mock API';
 
   public static examples = [
-    '$ mockoon-cli start --data ~/data.json',
-    '$ mockoon-cli start --data ~/data1.json ~/data2.json --port 3000 3001 --hostname 127.0.0.1 192.168.1.1',
-    '$ mockoon-cli start --data https://file-server/data.json',
-    '$ mockoon-cli start --data ~/data.json --log-transaction',
-    '$ mockoon-cli start --data ~/data.json --disable-routes route1 route2',
-    '$ mockoon-cli start --data ~/data.json --enable-random-latency',
-    '$ mockoon-cli start --data ~/data.json --proxy-url https://your-proxy-url --proxy-first',
-    '$ mockoon-cli start --data ~/data.json --faker-factory ./your-faker-factories.js',
-    '$ mockoon-cli start --data ~/data.json --doc'
+    '$ mockprox-cli start --data ~/data.json',
+    '$ mockprox-cli start --data ~/data1.json ~/data2.json --port 3000 3001 --hostname 127.0.0.1 192.168.1.1',
+    '$ mockprox-cli start --data https://file-server/data.json',
+    '$ mockprox-cli start --data ~/data.json --log-transaction',
+    '$ mockprox-cli start --data ~/data.json --disable-routes route1 route2',
+    '$ mockprox-cli start --data ~/data.json --enable-random-latency',
+    '$ mockprox-cli start --data ~/data.json --proxy-url https://your-proxy-url --proxy-first',
+    '$ mockprox-cli start --data ~/data.json --faker-factory ./your-faker-factories.js',
+    '$ mockprox-cli start --data ~/data.json --doc'
   ];
 
   public static flags = {
@@ -53,7 +53,7 @@ export default class Start extends Command {
     repair: Flags.boolean({
       char: 'r',
       description:
-        'If the data file seems too old, or an invalid Mockoon file, migrate/repair without prompting',
+        'If the data file seems too old, or an invalid mockprox file, migrate/repair without prompting',
       default: false
     }),
     'disable-log-to-file': Flags.boolean({
@@ -194,7 +194,7 @@ export default class Start extends Command {
     }
   ) => {
     const logger = createLoggerInstance(parameters.fileTransportOptions);
-    const server = new MockoonServer(parameters.environment, {
+    const server = new MockproxServer(parameters.environment, {
       environmentDirectory: parameters.environmentDirectory,
       disabledRoutes: parameters.disabledRoutes,
       fakerOptions: parameters.fakerOptions,

@@ -1,6 +1,6 @@
 // return one random item
 // return some random item as an array (to be used in triple braces) or as a string
-import { RandomInt } from '@mockoon/commons';
+import { RandomInt } from '@mockprox/commons';
 
 const someOf = function (
   itemList: string[],

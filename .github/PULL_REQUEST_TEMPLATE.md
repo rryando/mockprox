@@ -16,11 +16,11 @@ IMPORTANT RULES:
 
 <!-- Check relevant boxes -->
 
-- [ ] data migration added (@mockoon/commons)
-- [ ] commons lib tests added (@mockoon/commons)
-- [ ] commons-server lib tests added (@mockoon/commons-server)
-- [ ] CLI tests added (@mockoon/cli)
-- [ ] desktop UI automated tests added (@mockoon/desktop)
+- [ ] data migration added (@mockprox/commons)
+- [ ] commons lib tests added (@mockprox/commons)
+- [ ] commons-server lib tests added (@mockprox/commons-server)
+- [ ] CLI tests added (@mockprox/cli)
+- [ ] desktop UI automated tests added (@mockprox/desktop)
 
 <!-- Link to the original issue -->
 

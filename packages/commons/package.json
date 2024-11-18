@@ -1,11 +1,11 @@
 {
-  "name": "@mockoon/commons",
-  "description": "Mockoon's commons library. Used in Mockoon desktop application and CLI.",
-  "version": "9.0.0",
+  "name": "@mockprox/commons",
+  "description": "Mockprox's commons library. Used in Mockprox CLI.",
+  "version": "1.0.0",
   "author": {
-    "name": "Mockoon (1kB SARL-S)",
-    "email": "team@mockoon.com",
-    "url": "https://mockoon.com/"
+    "name": "Ryan Rynaldo",
+    "email": "rynaldo.dev@gmail.com",
+    "url": "https://github.com/rryando"
   },
   "license": "MIT",
   "scripts": {
@@ -24,13 +24,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mockoon/mockoon.git"
+    "url": "git+https://github.com/rryando/mockprox.git"
   },
-  "homepage": "https://mockoon.com",
+  "homepage": "https://github.com/rryando/mockprox",
   "bugs": {
-    "url": "https://github.com/mockoon/mockoon/issues"
+    "url": "https://github.com/rryando/mockprox/issues"
   },
-  "funding": "https://mockoon.com/sponsor-us/",
   "dependencies": {
     "joi": "17.13.3",
     "tslib": "2.8.0"

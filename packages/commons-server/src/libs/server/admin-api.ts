@@ -1,4 +1,4 @@
-import { Transaction } from '@mockoon/commons';
+import { Transaction } from '@mockprox/commons';
 import { Express, Request, Response } from 'express';
 
 /**

@@ -1,12 +1,12 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { strictEqual } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
-import { MockoonServer } from '../../../src';
+import { MockproxServer } from '../../../src';
 import { getEnvironment } from '../../libs/environment';
 
 describe('Env vars prefix default', () => {
   let environment: Environment;
-  let server: MockoonServer;
+  let server: MockproxServer;
 
   before(async () => {
     process.env.MOCKOON_TEST_ENV_VAR = 'testenvvar';
@@ -15,7 +15,7 @@ describe('Env vars prefix default', () => {
     environment = await getEnvironment('test');
     environment.port = 3010;
 
-    server = new MockoonServer(environment);
+    server = new MockproxServer(environment);
 
     await new Promise((resolve, reject) => {
       server.on('started', () => {
@@ -44,7 +44,7 @@ describe('Env vars prefix default', () => {
 
 describe('Env vars prefix custom', () => {
   let environment: Environment;
-  let server: MockoonServer;
+  let server: MockproxServer;
 
   before(async () => {
     process.env.OTHER_VAR = 'othervar';
@@ -53,7 +53,7 @@ describe('Env vars prefix custom', () => {
     environment = await getEnvironment('test');
     environment.port = 3010;
 
-    server = new MockoonServer(environment, { envVarsPrefix: 'PREFIX_' });
+    server = new MockproxServer(environment, { envVarsPrefix: 'PREFIX_' });
 
     await new Promise((resolve, reject) => {
       server.on('started', () => {
@@ -82,7 +82,7 @@ describe('Env vars prefix custom', () => {
 
 describe('Env vars prefix none', () => {
   let environment: Environment;
-  let server: MockoonServer;
+  let server: MockproxServer;
 
   before(async () => {
     process.env.OTHER_VAR = 'othervar';
@@ -91,7 +91,7 @@ describe('Env vars prefix none', () => {
     environment = await getEnvironment('test');
     environment.port = 3010;
 
-    server = new MockoonServer(environment, { envVarsPrefix: '' });
+    server = new MockproxServer(environment, { envVarsPrefix: '' });
 
     await new Promise((resolve, reject) => {
       server.on('started', () => {

@@ -1,4 +1,4 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { SafeString } from 'handlebars';
 import { ServerRequest } from '../requests';
 import { fromSafeString, getValueFromPath } from '../utils';

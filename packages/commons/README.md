@@ -10,7 +10,7 @@
   <a href="https://discord.gg/FtJjkejKGp"><img src="https://img.shields.io/badge/Discord-go-blue.svg?style=flat-square&colorA=6c84d9&colorB=1da1f2"/></a>
   <br>
   <br>
-  <h1>@Mockoon/commons</h1>
+  <h1>@mockprox/commons</h1>
 </div>
 
 Mockoon's Commons library regroups Mockoon's shared code used in the [desktop application](https://github.com/mockoon/mockoon/blob/main/packages/desktop) and the [CLI](https://github.com/mockoon/mockoon/blob/main/packages/cli). It contains mostly typings and is designed to be used in both the browser and Node.js environments.

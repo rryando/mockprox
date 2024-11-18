@@ -14,7 +14,7 @@ import {
   Route,
   RouteResponse,
   RouteType
-} from '@mockoon/commons';
+} from '@mockprox/commons';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { OpenAPI, OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import { join } from 'path';
@@ -108,16 +108,22 @@ export class OpenAPIConverter {
       writeFileSync(specPath, fileContent);
 
       await generateModelFromSwagger({
-        fileName: 'model',
+        fileName: 'types',
         swaggerFile: specPath,
         ouputDir: publicPath+'/model',
         callback: () => {}
       });
 
-      // Update index.html with spec path
+      // Read the index.html file
       const indexPath = join(publicPath, 'index.html');
       let indexContent = readFileSync(indexPath, 'utf8');
-      indexContent = indexContent.replace('OPEN_API_FILE_PATH', `./${specFileName}`);
+      
+      // Replace the swaggerPath value using regex
+      indexContent = indexContent.replace(
+        /(swaggerPath:\s*['"])[^'"]*(['"])/,
+        `$1./${specFileName}$2`
+      );
+      
       writeFileSync(indexPath, indexContent);
     } else {
       // Handle local file
@@ -135,18 +141,22 @@ export class OpenAPIConverter {
       const specPath = join(publicPath, specFileName);
       writeFileSync(specPath, fileContent);
 
-      console.log(specPath)
-
       await generateModelFromSwagger({
         fileName: 'types',
         swaggerFile: specPath,
         ouputDir: publicPath+'/model',
         callback: () => {}
       });
-      // Update index.html with spec path
+      // Read the index.html file
       const indexPath = join(publicPath, 'index.html');
       let indexContent = readFileSync(indexPath, 'utf8');
-      indexContent = indexContent.replace('OPEN_API_FILE_PATH', `./${specFileName}`);
+      
+      // Replace the swaggerPath value using regex
+      indexContent = indexContent.replace(
+        /(swaggerPath:\s*['"])[^'"]*(['"])/,
+        `$1./${specFileName}$2`
+      );
+      
       writeFileSync(indexPath, indexContent);
 
       
@@ -308,8 +318,6 @@ export class OpenAPIConverter {
       hasDefaultRoute: false,
       port
     });
-
-    console.log(parsedAPI)
 
     // parse the port
     newEnvironment.port =

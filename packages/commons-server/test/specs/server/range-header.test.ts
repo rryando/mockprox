@@ -1,18 +1,18 @@
-import { Environment } from '@mockoon/commons';
+import { Environment } from '@mockprox/commons';
 import { strictEqual } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
-import { MockoonServer } from '../../../src';
+import { MockproxServer } from '../../../src';
 import { getEnvironment } from '../../libs/environment';
 
 describe('Range headers', () => {
   let environment: Environment;
-  let server: MockoonServer;
+  let server: MockproxServer;
 
   before(async () => {
     environment = await getEnvironment('test');
     environment.port = 3010;
 
-    server = new MockoonServer(environment);
+    server = new MockproxServer(environment);
 
     await new Promise((resolve, reject) => {
       server.on('started', () => {

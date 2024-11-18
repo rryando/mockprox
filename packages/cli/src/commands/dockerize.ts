@@ -13,9 +13,9 @@ export default class Dockerize extends Command {
     'Copy (or download) all the provided data files locally and create a Dockerfile to build a self-contained image of one or more mock API';
 
   public static examples = [
-    '$ mockoon-cli dockerize --data ~/data.json --output ./folder/Dockerfile',
-    '$ mockoon-cli dockerize --data ~/data1.json ~/data2.json --output ./folder/Dockerfile',
-    '$ mockoon-cli dockerize --data https://file-server/data.json --output ./folder/Dockerfile'
+    '$ mockprox-cli dockerize --data ~/data.json --output ./folder/Dockerfile',
+    '$ mockprox-cli dockerize --data ~/data1.json ~/data2.json --output ./folder/Dockerfile',
+    '$ mockprox-cli dockerize --data https://file-server/data.json --output ./folder/Dockerfile'
   ];
 
   public static flags = {
@@ -49,7 +49,7 @@ export default class Dockerize extends Command {
     try {
       const filePaths: string[] = [];
       let entrypoint: string[] = [
-        'mockoon-cli',
+        'mockprox-cli',
         'start',
         '--disable-log-to-file',
         '--data'
@@ -99,9 +99,9 @@ export default class Dockerize extends Command {
       this.log(
         CLIMessages.DOCKERIZE_BUILD_COMMAND,
         dockerfilePath.dir,
-        'mockoon-image',
+        'mockprox-image',
         userFlags.port.map((port) => `-p ${port}:${port}`).join(' '),
-        'mockoon-image'
+        'mockprox-image'
       );
     } catch (error) {
       if (error instanceof Error) {
