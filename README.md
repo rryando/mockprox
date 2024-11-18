@@ -9,20 +9,33 @@ We highly encourage you to:
 
 ## About Mockprox
 
-Mockprox enhances Mockoon's foundation with additional features focused on advanced proxy capabilities and extended mocking functionality. We offer both CLI for improving developer experience especially for frontend developers.
+Mockprox enhances Mockoon's foundation with powerful new features focused on developer experience:
 
-Mockprox is a powerful yet simple tool for API mocking, forked from the excellent [Mockoon](https://mockoon.com) project with enhanced proxy and mocking capabilities.
+### 🔄 Advanced Proxy Capabilities
+- Proxy-first architecture for seamless API integration
+- Intelligent request forwarding with fallback to mock data
+- Flexible proxy URL configuration
+
+### 📚 API Documentation & Types
+- Auto-generated ReDoc documentation (served on port+1)
+- TypeScript types generation for your API
+- OpenAPI specification export
+
+### 🛠 Enhanced Developer Tools
+- Custom Faker.js factories support
+- Extended transaction logging
+- Automatic type generation for frontend development
 
 ## Key Features
 
 - 🚀 Unlimited mock servers and routes
-- 📱 Desktop app and CLI support
 - 🔄 Advanced proxy mode with customizable forwarding
-- 🔐 HTTPS support
-- 📝 OpenAPI compatibility
+- 📚 Auto-generated API documentation with TypeScript types
 - 🎭 Custom Faker.js factories
 - 📊 Enhanced transaction logging
-- 📚 Auto-generated API documentation
+- 🔐 HTTPS support
+- 📝 OpenAPI compatibility
+- 🛠 TypeScript integration
 - 🔄 Proxy-first request handling
-- 🛠 Custom factory support
+- 🌐 Multi-environment support
 

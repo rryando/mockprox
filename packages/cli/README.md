@@ -107,5 +107,38 @@ OPTIONS
       --doc                    enable API documentation (default: false)
 ```
 
+### Start Command Options
+
+Key features and their options:
+
+#### Documentation Server
+```
+--doc                    Enable API documentation server (port+1)
+                        Serves ReDoc UI and TypeScript types
+```
+
+#### Advanced Proxy Features
+```
+--proxy-url=<url>       Proxy all requests to specified URL
+--proxy-first           Check proxy before mock routes (default: false)
+```
+
+#### Factory Support
+```
+--faker-factory=<name>  Custom Faker.js factory to use (default: 'default')
+```
+
+Example usage:
+```bash
+# Start mock server with documentation
+mockprox-cli start --data ./api.json --port 3000 --doc
+# This will serve:
+# - Mock API on port 3000
+# - ReDoc UI and types on port 3001
+
+# Start with proxy-first mode
+mockprox-cli start --data ./api.json --proxy-url https://api.example.com --proxy-first
+```
+
 [Additional command details and examples removed for brevity...]
 
