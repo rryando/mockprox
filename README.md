@@ -1,3 +1,9 @@
+https://github.com/user-attachments/assets/f070597b-7077-4e4f-aa15-2703949a0999
+
+## ⚙️ Installation & Getting started
+- 👉 head to [mockprox-cli package](https://github.com/rryando/mockprox/tree/main/packages/cli#readme)
+
+
 ## ❤️ Tribute to Mockoon
 
 Mockprox is proudly built upon [Mockoon](https://mockoon.com), an exceptional open-source API mocking tool. We extend our heartfelt gratitude to the Mockoon team for their outstanding contribution to the developer community. Their commitment to open-source development has made projects like Mockprox possible.
@@ -6,6 +12,7 @@ We highly encourage you to:
 - ⭐ Check out [Mockoon's GitHub repository](https://github.com/mockoon/mockoon)
 - 🌟 Support their project by giving it a star
 - 💝 Consider [sponsoring their work](https://github.com/sponsors/mockoon)
+
 
 ## About Mockprox
 
