@@ -1,7 +1,7 @@
 {
   "name": "@mockprox/cli",
   "description": "Mockprox's CLI. Deploy your mock APIs anywhere.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",
@@ -46,8 +46,8 @@
   },
   "dependencies": {
     "@inquirer/confirm": "5.0.0",
-    "@mockprox/commons": "1.0.0",
-    "@mockprox/commons-server": "1.0.0",
+    "@mockprox/commons": "1.0.1",
+    "@mockprox/commons-server": "1.0.1",
     "@oclif/core": "4.0.30",
     "@oclif/plugin-help": "6.2.16",
     "mkdirp": "3.0.1",

@@ -1,7 +1,7 @@
 {
   "name": "@mockprox/commons-server",
   "description": "Mockprox's commons server library. Used in Mockprox CLI.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",
@@ -34,7 +34,7 @@
   "dependencies": {
     "@apidevtools/swagger-parser": "10.1.0",
     "@faker-js/faker": "9.0.3",
-    "@mockprox/commons": "1.0.0",
+    "@mockprox/commons": "1.0.1",
     "ajv": "8.17.1",
     "append-field": "1.0.0",
     "busboy": "1.6.0",
@@ -65,8 +65,8 @@
     "@types/node": "22.7.9",
     "@types/object-path": "0.11.4",
     "@types/qs": "6.9.16",
+    "nodemon": "^3.0.2",
     "openapi-types": "12.1.3",
-    "typescript": "5.6.3",
-    "nodemon": "^3.0.2"
+    "typescript": "5.6.3"
   }
 }
