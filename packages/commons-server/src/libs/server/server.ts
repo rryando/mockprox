@@ -342,8 +342,8 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     app.use(this.logRequest);
     app.use(this.setResponseHeaders);
 
-    this.setRoutes(app);
     this.setCors(app);
+    this.setRoutes(app);
     this.enableProxy(app);
     app.use(this.errorHandler);
 
@@ -1170,8 +1170,15 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
             proxyResponse.headers.forEach((value, key) => {
               proxyHeaders[key] = value;
             });
-            
+
             const transformedHeaders = TransformHeaders(proxyHeaders);
+
+            // Add CORS headers if CORS is enabled
+            let finalHeaders = transformedHeaders;
+            if (this.environment.cors) {
+              const corsHeaders = CORSHeaders.map(header => ({ key: header.key, value: header.value }));
+              finalHeaders = [...corsHeaders, ...transformedHeaders];
+            }
 
             // Handle the response body
             if (proxyResponse.body) {
@@ -1192,7 +1199,7 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
               this.serveBody(content, route, {
                 ...route.responses[0], // use first response as base
                 statusCode: proxyResponse.status,
-                headers: transformedHeaders,
+                headers: finalHeaders,
                 bodyType: BodyTypes.INLINE,
                 disableTemplating: true // disable templating for proxy responses
               }, request, response, false);
