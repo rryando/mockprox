@@ -6,13 +6,13 @@ import {
   ServerOptions,
   defaultEnvironmentVariablesPrefix,
   defaultMaxTransactionLogs
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import {
   MockproxServer,
   ServerMessages,
   createLoggerInstance,
   listenServerEvents
-} from '@mockprox/commons-server';
+} from 'mockprox-commons-server';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { format } from 'util';

@@ -28,7 +28,7 @@ import {
   generateUUID,
   getLatency,
   stringIncludesArrayItems
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import appendField from 'append-field';
 import busboy from 'busboy';
 import cookieParser from 'cookie-parser';

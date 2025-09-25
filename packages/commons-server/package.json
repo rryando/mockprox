@@ -1,7 +1,7 @@
 {
-  "name": "@mockprox/commons-server",
+  "name": "mockprox-commons-server",
   "description": "Mockprox's commons server library. Used in Mockprox CLI.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",
@@ -34,7 +34,7 @@
   "dependencies": {
     "@apidevtools/swagger-parser": "10.1.0",
     "@faker-js/faker": "9.0.3",
-    "@mockprox/commons": "1.0.1",
+    "mockprox-commons": "^1.0.2",
     "ajv": "8.17.1",
     "append-field": "1.0.0",
     "busboy": "1.6.0",

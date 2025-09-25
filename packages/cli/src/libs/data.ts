@@ -5,8 +5,8 @@ import {
   HighestMigrationId,
   Migrations,
   repairRefs
-} from '@mockprox/commons';
-import { OpenAPIConverter } from '@mockprox/commons-server';
+} from 'mockprox-commons';
+import { OpenAPIConverter } from 'mockprox-commons-server';
 import { promises as fs } from 'fs';
 import { CLIMessages } from '../constants/cli-messages.constants';
 
