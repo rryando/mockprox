@@ -1,4 +1,4 @@
-import { Environment } from '@mockprox/commons';
+import { Environment } from 'mockprox-commons';
 import { strictEqual } from 'node:assert';
 import { after, before, describe, it } from 'node:test';
 import { MockproxServer } from '../../../src';

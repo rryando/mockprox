@@ -2,7 +2,7 @@ import { Request } from 'express';
 import { IncomingMessage } from 'http';
 import { match } from 'path-to-regexp';
 
-import { CloneObject, Route } from '@mockprox/commons';
+import { CloneObject, Route } from 'mockprox-commons';
 import { parse as parseUrl } from 'url';
 import { parseRequestMessage, parseWebSocketMessage } from './utils';
 

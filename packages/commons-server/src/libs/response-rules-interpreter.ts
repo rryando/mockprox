@@ -8,7 +8,7 @@ import {
   Route,
   RouteResponse,
   stringIncludesArrayItems
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import Ajv from 'ajv';
 import { get as objectGet } from 'object-path';
 import { ParsedQs } from 'qs';

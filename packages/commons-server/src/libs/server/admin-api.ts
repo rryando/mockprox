@@ -1,4 +1,4 @@
-import { Transaction } from '@mockprox/commons';
+import { Transaction } from 'mockprox-commons';
 import { Express, Request, Response } from 'express';
 
 /**

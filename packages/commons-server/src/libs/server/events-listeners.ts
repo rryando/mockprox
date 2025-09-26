@@ -6,7 +6,7 @@ import {
   InvokedCallback,
   Methods,
   Transaction
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import { format } from 'util';
 import { Logger } from 'winston';
 import { ServerMessages } from '../../constants/server-messages.constants';

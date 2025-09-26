@@ -1,4 +1,4 @@
-import { RandomInt } from '@mockprox/commons';
+import { RandomInt } from 'mockprox-commons';
 import { EOL } from 'os';
 
 const repeat = function (...args: any[]) {

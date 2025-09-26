@@ -1,4 +1,5 @@
 import openAPI from '@apidevtools/swagger-parser';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import {
   BodyTypes,
   BuildEnvironment,
@@ -14,8 +15,7 @@ import {
   Route,
   RouteResponse,
   RouteType
-} from '@mockprox/commons';
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+} from 'mockprox-commons';
 import { OpenAPI, OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import { join } from 'path';
 import { generateModelFromSwagger } from './openapi-to-ts-def';
@@ -55,13 +55,13 @@ export class OpenAPIConverter {
       const absolutePath = require.resolve(customFactoriesPath, {
         paths: [process.cwd()]
       });
-      
+
       const customFactories = require(absolutePath);
-      
+
       // Create a new object for merging
       const mergedFactories = Object.assign(this.defaultPropertyNameFactories, customFactories);
-      
-      
+
+
       return mergedFactories;
     } catch (error) {
       console.error('Error loading custom factories:', error);
@@ -88,13 +88,13 @@ export class OpenAPIConverter {
       }
     );
 
-    
+
 
     // Download and store OpenAPI spec file
     if (filePath.startsWith('http')) {
       const response = await fetch(filePath);
       const fileContent = await response.text();
-      
+
       // Create public directory if it doesn't exist
       const publicPath = join(__dirname, '../public');
       mkdirSync(publicPath, { recursive: true });
@@ -102,7 +102,7 @@ export class OpenAPIConverter {
       // Get file extension from URL or default to .json
       const fileExtension = filePath.split('.').pop() || 'json';
       const specFileName = `api-spec.${fileExtension}`;
-      
+
       // Write downloaded spec to file
       const specPath = join(publicPath, specFileName);
       writeFileSync(specPath, fileContent);
@@ -117,18 +117,18 @@ export class OpenAPIConverter {
       // Read the index.html file
       const indexPath = join(publicPath, 'index.html');
       let indexContent = readFileSync(indexPath, 'utf8');
-      
+
       // Replace the swaggerPath value using regex
       indexContent = indexContent.replace(
         /(swaggerPath:\s*['"])[^'"]*(['"])/,
         `$1./${specFileName}$2`
       );
-      
+
       writeFileSync(indexPath, indexContent);
     } else {
       // Handle local file
       const fileContent = readFileSync(filePath, 'utf8');
-      
+
       // Create public directory if it doesn't exist
       const publicPath = join(__dirname, '../public');
       mkdirSync(publicPath, { recursive: true });
@@ -150,16 +150,16 @@ export class OpenAPIConverter {
       // Read the index.html file
       const indexPath = join(publicPath, 'index.html');
       let indexContent = readFileSync(indexPath, 'utf8');
-      
+
       // Replace the swaggerPath value using regex
       indexContent = indexContent.replace(
         /(swaggerPath:\s*['"])[^'"]*(['"])/,
         `$1./${specFileName}$2`
       );
-      
+
       writeFileSync(indexPath, indexContent);
 
-      
+
     }
 
     if (this.isSwagger(parsedAPI)) {
@@ -319,6 +319,25 @@ export class OpenAPIConverter {
       port
     });
 
+    const corsHeaders: Header[] = [
+      BuildHeader('Access-Control-Allow-Origin', "{{header 'Origin' ''}}"),
+      BuildHeader('Access-Control-Allow-Credentials', 'true'),
+      BuildHeader(
+        'Access-Control-Allow-Methods',
+        'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS'
+      ),
+      BuildHeader(
+        'Access-Control-Allow-Headers',
+        "{{header 'Access-Control-Request-Headers' 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With'}}"
+      ),
+      BuildHeader(
+        'Vary',
+        'Origin, Access-Control-Request-Headers, Access-Control-Request-Method'
+      )
+    ];
+
+    newEnvironment.headers = corsHeaders;
+
     // parse the port
     newEnvironment.port =
       (parsedAPI.host && parseInt(parsedAPI.host.split(':')[1], 10)) ||
@@ -355,6 +374,25 @@ export class OpenAPIConverter {
       hasDefaultRoute: false,
       port
     });
+
+    const corsHeaders: Header[] = [
+      BuildHeader('Access-Control-Allow-Origin', "{{header 'Origin' ''}}"),
+      BuildHeader('Access-Control-Allow-Credentials', 'true'),
+      BuildHeader(
+        'Access-Control-Allow-Methods',
+        'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS'
+      ),
+      BuildHeader(
+        'Access-Control-Allow-Headers',
+        "{{header 'Access-Control-Request-Headers' 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With'}}"
+      ),
+      BuildHeader(
+        'Vary',
+        'Origin, Access-Control-Request-Headers, Access-Control-Request-Method'
+      )
+    ];
+
+    newEnvironment.headers = corsHeaders;
 
     const server: OpenAPIV3.ServerObject[] | undefined = parsedAPI.servers;
 

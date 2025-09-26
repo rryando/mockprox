@@ -1,4 +1,4 @@
-import { generateUUID } from '@mockprox/commons';
+import { generateUUID } from 'mockprox-commons';
 import { deepStrictEqual, notStrictEqual, ok, strictEqual } from 'node:assert';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 import { databucketActions } from '../../../src/libs/server/crud';

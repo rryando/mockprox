@@ -1,4 +1,4 @@
-import { Route } from '@mockprox/commons';
+import { Route } from 'mockprox-commons';
 import { Request } from 'express';
 import { ParamsDictionary, Query } from 'express-serve-static-core';
 import { IncomingMessage } from 'http';

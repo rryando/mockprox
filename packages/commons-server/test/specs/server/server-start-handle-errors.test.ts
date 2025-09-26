@@ -1,4 +1,4 @@
-import { Environment, ServerErrorCodes } from '@mockprox/commons';
+import { Environment, ServerErrorCodes } from 'mockprox-commons';
 import { strictEqual } from 'node:assert';
 import { before, describe, it } from 'node:test';
 import { MockproxServer } from '../../../src';

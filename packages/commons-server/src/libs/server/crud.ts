@@ -2,7 +2,7 @@ import {
   generateUUID,
   ProcessedDatabucket,
   RouteResponse
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import { Request, Response } from 'express';
 import { get as getPath, set as setPath } from 'object-path';
 import { applyFilter, parseFilters } from '../filters';

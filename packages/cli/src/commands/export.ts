@@ -1,6 +1,6 @@
-import { OpenAPIConverter } from '@mockprox/commons-server';
 import { Command, Flags } from '@oclif/core';
 import { promises as fs } from 'fs';
+import { OpenAPIConverter } from 'mockprox-commons-server';
 import { parseDataFiles } from '../libs/data';
 
 export default class Export extends Command {

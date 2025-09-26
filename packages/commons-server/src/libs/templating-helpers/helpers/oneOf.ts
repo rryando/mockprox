@@ -1,4 +1,4 @@
-import { RandomInt } from '@mockprox/commons';
+import { RandomInt } from 'mockprox-commons';
 import { SafeString } from 'handlebars';
 
 const oneOf = function (...args: any[]) {

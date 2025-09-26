@@ -4,7 +4,7 @@ import {
   ResponseMode,
   Route,
   RouteResponse
-} from '@mockprox/commons';
+} from 'mockprox-commons';
 import { IncomingMessage } from 'http';
 import { ok, strictEqual } from 'node:assert';
 import { describe, it } from 'node:test';

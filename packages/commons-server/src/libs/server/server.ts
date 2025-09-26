@@ -590,7 +590,8 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     response: Response,
     next: NextFunction
   ) => {
-    this.setHeaders(this.environment.headers, response, request);
+    // Always add CORS headers to all responses (hardcoded for maximum compatibility)
+    this.setHeaders([...CORSHeaders, ...this.environment.headers], response, request);
 
     next();
   };
@@ -1173,12 +1174,9 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
 
             const transformedHeaders = TransformHeaders(proxyHeaders);
 
-            // Add CORS headers if CORS is enabled
-            let finalHeaders = transformedHeaders;
-            if (this.environment.cors) {
-              const corsHeaders = CORSHeaders.map(header => ({ key: header.key, value: header.value }));
-              finalHeaders = [...corsHeaders, ...transformedHeaders];
-            }
+            // Always add CORS headers (hardcoded for maximum compatibility)
+            const corsHeaders = CORSHeaders.map(header => ({ key: header.key, value: header.value }));
+            const finalHeaders = [...corsHeaders, ...transformedHeaders];
 
             // Handle the response body
             if (proxyResponse.body) {
@@ -1841,26 +1839,25 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
   }
 
   /**
-   * Always answer with status 200 to CORS pre flight OPTIONS requests if option activated.
+   * Always answer with status 200 to CORS pre flight OPTIONS requests.
    * /!\ Must be called after the routes creation otherwise it will intercept all user defined OPTIONS routes.
    *
    * @param server - express instance
    */
   private setCors(server: Application) {
-    if (this.environment.cors) {
-      server.options('/*', (req, res) => {
-        this.refreshEnvironment();
+    // Always handle CORS preflight requests (hardcoded for maximum compatibility)
+    server.options('/*', (req, res) => {
+      this.refreshEnvironment();
 
-        // override default CORS headers with environment's headers
-        this.setHeaders(
-          [...CORSHeaders, ...this.environment.headers],
-          res,
-          req
-        );
+      // override default CORS headers with environment's headers
+      this.setHeaders(
+        [...CORSHeaders, ...this.environment.headers],
+        res,
+        req
+      );
 
-        res.status(200).end();
-      });
-    }
+      res.status(200).end();
+    });
   }
 
   /**

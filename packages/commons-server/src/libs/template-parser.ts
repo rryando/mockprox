@@ -1,4 +1,4 @@
-import { Environment, ProcessedDatabucket } from '@mockprox/commons';
+import { Environment, ProcessedDatabucket } from 'mockprox-commons';
 import { Response } from 'express';
 import { compile as hbsCompile } from 'handlebars';
 import { IncomingMessage } from 'http';
