@@ -1,7 +1,7 @@
 {
   "name": "mockprox-commons-server",
   "description": "Mockprox's commons server library. Used in Mockprox CLI.",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",

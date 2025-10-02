@@ -1,34 +1,3 @@
-import {
-  BINARY_BODY,
-  BodyTypes,
-  CORSHeaders,
-  Callback,
-  CallbackInvocation,
-  Environment,
-  FileExtensionsWithTemplating,
-  GetContentType,
-  GetRouteResponseContentType,
-  Header,
-  IsValidURL,
-  Methods,
-  MimeTypesWithTemplating,
-  ParsedJSONBodyMimeTypes,
-  ParsedXMLBodyMimeTypes,
-  ProcessedDatabucket,
-  Route,
-  RouteResponse,
-  RouteType,
-  ServerErrorCodes,
-  ServerEvents,
-  ServerOptions,
-  StreamingMode,
-  Transaction,
-  defaultEnvironmentVariablesPrefix,
-  defaultMaxTransactionLogs,
-  generateUUID,
-  getLatency,
-  stringIncludesArrayItems
-} from 'mockprox-commons';
 import appendField from 'append-field';
 import busboy from 'busboy';
 import cookieParser from 'cookie-parser';
@@ -37,17 +6,48 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import { createReadStream, mkdirSync, readFile, readFileSync, statSync } from 'fs';
 import type { RequestListener } from 'http';
 import {
-  IncomingMessage,
-  createServer as httpCreateServer,
-  Server as httpServer
+    IncomingMessage,
+    createServer as httpCreateServer,
+    Server as httpServer
 } from 'http';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
-  createServer as httpsCreateServer,
-  Server as httpsServer
+    createServer as httpsCreateServer,
+    Server as httpsServer
 } from 'https';
 import killable from 'killable';
 import { lookup as mimeTypeLookup } from 'mime-types';
+import {
+    BINARY_BODY,
+    BodyTypes,
+    CORSHeaders,
+    Callback,
+    CallbackInvocation,
+    Environment,
+    FileExtensionsWithTemplating,
+    GetContentType,
+    GetRouteResponseContentType,
+    Header,
+    IsValidURL,
+    Methods,
+    MimeTypesWithTemplating,
+    ParsedJSONBodyMimeTypes,
+    ParsedXMLBodyMimeTypes,
+    ProcessedDatabucket,
+    Route,
+    RouteResponse,
+    RouteType,
+    ServerErrorCodes,
+    ServerEvents,
+    ServerOptions,
+    StreamingMode,
+    Transaction,
+    defaultEnvironmentVariablesPrefix,
+    defaultMaxTransactionLogs,
+    generateUUID,
+    getLatency,
+    stringIncludesArrayItems
+} from 'mockprox-commons';
 import { basename, extname, join } from 'path';
 import { match } from 'path-to-regexp';
 import { parse as qsParse } from 'qs';
@@ -62,30 +62,31 @@ import { xml2js } from 'xml-js';
 import { ServerMessages } from '../../constants/server-messages.constants';
 import { DefaultTLSOptions } from '../../constants/ssl.constants';
 import { SetFakerLocale, SetFakerSeed } from '../faker';
+import { MockproxConfigLoader } from '../mockprox-config-loader';
 import { ServerRequest, fromExpressRequest, fromWsRequest } from '../requests';
 import { ResponseRulesInterpreter } from '../response-rules-interpreter';
 import { TemplateParser } from '../template-parser';
 import { requestHelperNames } from '../templating-helpers/request-helpers';
 import {
-  CreateCallbackInvocation,
-  CreateInFlightRequest,
-  CreateTransaction,
-  TransformHeaders,
-  dedupSlashes,
-  isBodySupportingMethod,
-  preparePath,
-  resolvePathFromEnvironment,
-  routesFromFolder,
+    CreateCallbackInvocation,
+    CreateInFlightRequest,
+    CreateTransaction,
+    TransformHeaders,
+    dedupSlashes,
+    isBodySupportingMethod,
+    preparePath,
+    resolvePathFromEnvironment,
+    routesFromFolder,
 } from '../utils';
 import { createAdminEndpoint } from './admin-api';
 import { CrudRouteIds, crudRoutesBuilder, databucketActions } from './crud';
 import {
-  BroadcastContext,
-  DelegatedBroadcastHandler,
-  getSafeStreamingInterval,
-  isWebSocketOpen,
-  messageToString,
-  serveFileContentInWs
+    BroadcastContext,
+    DelegatedBroadcastHandler,
+    getSafeStreamingInterval,
+    isWebSocketOpen,
+    messageToString,
+    serveFileContentInWs
 } from './ws';
 
 /**
@@ -115,13 +116,16 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     doc: false
   };
   private transactionLogs: Transaction[] = [];
+  private configLoader?: MockproxConfigLoader;
 
   constructor(
     private environment: Environment,
-    options: Partial<ServerOptions> = {}
+    options: Partial<ServerOptions> = {},
+    configLoader?: MockproxConfigLoader
   ) {
     super();
 
+    this.configLoader = configLoader;
     this.options = {
       ...this.options,
       ...options,
@@ -341,6 +345,11 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     app.use(cookieParser());
     app.use(this.logRequest);
     app.use(this.setResponseHeaders);
+
+    // Add state selection middleware if config is loaded
+    if (this.configLoader?.isLoaded()) {
+      app.use(this.createStateMiddleware());
+    }
 
     this.setCors(app);
     this.setRoutes(app);
@@ -1229,15 +1238,52 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
         return;
       }
 
-      const enabledRouteResponse = new ResponseRulesInterpreter(
-        currentRoute.responses,
-        fromExpressRequest(request),
-        currentRoute.responseMode,
-        this.environment,
-        this.processedDatabuckets,
-        this.globalVariables,
-        this.options.envVarsPrefix
-      ).chooseResponse(this.requestNumbers[route.uuid]);
+      let enabledRouteResponse: RouteResponse | undefined;
+
+      // Check config for URL state override
+      if (this.configLoader?.isLoaded()) {
+        const requestState = (request as any).mockproxState;
+        const routePattern = `${request.method} ${route.endpoint}`;
+
+        const urlState = this.configLoader.getUrlState(
+          routePattern,
+          requestState
+        );
+
+        if (urlState) {
+          // If state is "random", fall through to default mock generation
+          // If state has overrides (statusCode, body, headers), use them
+          if (
+            urlState.state !== 'random' ||
+            urlState.statusCode ||
+            urlState.body
+          ) {
+            // Build RouteResponse from urlState overrides
+            enabledRouteResponse = {
+              ...currentRoute.responses[0], // Start with first route response as base
+              statusCode: urlState.statusCode ?? 200,
+              body: urlState.body ?? currentRoute.responses[0]?.body ?? '',
+              headers:
+                urlState.headers ?? currentRoute.responses[0]?.headers ?? []
+            };
+          }
+        }
+      }
+
+      // Fall back to route's own response selection if no config override
+      if (!enabledRouteResponse) {
+        const chosenResponse = new ResponseRulesInterpreter(
+          currentRoute.responses,
+          fromExpressRequest(request),
+          currentRoute.responseMode,
+          this.environment,
+          this.processedDatabuckets,
+          this.globalVariables,
+          this.options.envVarsPrefix
+        ).chooseResponse(this.requestNumbers[route.uuid]);
+
+        enabledRouteResponse = chosenResponse ?? undefined;
+      }
 
       if (!enabledRouteResponse) {
         return next();
@@ -1836,6 +1882,23 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
         format(ServerMessages.ROUTE_SERVING_ERROR, error.message)
       );
     }
+  }
+
+  /**
+   * Create middleware to handle state selection via query param
+   */
+  private createStateMiddleware() {
+    return (req: Request, res: Response, next: NextFunction) => {
+      // Check for ?state=<stateName> query param
+      const stateParam = req.query.state as string | undefined;
+      
+      if (stateParam && this.configLoader) {
+        // Store state in request for later use
+        (req as any).mockproxState = stateParam;
+      }
+      
+      next();
+    };
   }
 
   /**

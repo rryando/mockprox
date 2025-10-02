@@ -1,13 +1,13 @@
 import confirm from '@inquirer/confirm';
-import {
-  Environment,
-  EnvironmentSchema,
-  HighestMigrationId,
-  Migrations,
-  repairRefs
-} from 'mockprox-commons';
-import { OpenAPIConverter } from 'mockprox-commons-server';
 import { promises as fs } from 'fs';
+import {
+    Environment,
+    EnvironmentSchema,
+    HighestMigrationId,
+    Migrations,
+    repairRefs
+} from 'mockprox-commons';
+import { MockproxConfigLoader, OpenAPIConverter } from 'mockprox-commons-server';
 import { CLIMessages } from '../constants/cli-messages.constants';
 
 /**
@@ -76,7 +76,8 @@ export const parseDataFiles = async (
     proxyFirst: boolean;
     customFactoriesPath: string;
   } = { ports: [], hostnames: [], proxyMode: false, proxyHost: '', proxyFirst: false, customFactoriesPath: '' },
-  repair = false
+  repair = false,
+  configLoader?: MockproxConfigLoader
 ): Promise<{ originalPath: string; environment: Environment }[]> => {
   const openAPIConverter = new OpenAPIConverter();
   const environments: { originalPath: string; environment: Environment }[] = [];
@@ -87,7 +88,12 @@ export const parseDataFiles = async (
     let environment: Environment | null = null;
 
     try {
-      environment = await openAPIConverter.convertFromOpenAPI(filePath, userOptions.ports[index], userOptions.customFactoriesPath);
+      environment = await openAPIConverter.convertFromOpenAPI(
+        filePath,
+        userOptions.ports[index],
+        userOptions.customFactoriesPath,
+        configLoader
+      );
 
     } catch (openAPIError) {
       if (openAPIError instanceof Error) {

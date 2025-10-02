@@ -1,0 +1,210 @@
+{
+  "version": "1.0",
+  
+  "dataGeneration": {
+    "arrays": {
+      "defaultCount": 10
+    },
+    "propertyOverrides": {
+      "_comment": "Property overrides define how specific property names should be generated. Use static values or faker patterns with {{}} syntax.",
+      
+      "email": "{{faker.internet.email}}",
+      "firstName": "{{faker.person.firstName}}",
+      "lastName": "{{faker.person.lastName}}",
+      "phone": "{{faker.phone.number}}",
+      "address": "{{faker.location.streetAddress}}",
+      "city": "{{faker.location.city}}",
+      "zipCode": "{{faker.location.zipCode}}",
+      "country": "{{faker.location.country}}",
+      
+      "userId": "{{faker.string.uuid}}",
+      "id": "{{faker.string.uuid}}",
+      "createdAt": "{{faker.date.past}}",
+      "updatedAt": "{{faker.date.recent}}",
+      
+      "status": "active",
+      "isActive": true,
+      "isDeleted": false,
+      "role": "user",
+      
+      "price": "{{faker.commerce.price}}",
+      "productName": "{{faker.commerce.productName}}",
+      "companyName": "{{faker.company.name}}",
+      
+      "url": "{{faker.internet.url}}",
+      "imageUrl": "{{faker.image.url}}",
+      "description": "{{faker.lorem.sentence}}"
+    }
+  },
+  
+  "responseStates": {
+    "_comment": "Response states allow you to define different responses for the same route based on query parameter. Switch states via ?state=<name>",
+    
+    "defaultState": "success",
+    
+    "states": {
+      "success": {
+        "_comment": "Success state returns normal 200 responses with generated data",
+        
+        "GET /users": {
+          "statusCode": 200,
+          "body": "{\"users\": [], \"total\": 100, \"page\": 1}",
+          "headers": [
+            {"key": "Content-Type", "value": "application/json"},
+            {"key": "X-Total-Count", "value": "100"}
+          ]
+        },
+        
+        "GET /users/*": {
+          "_comment": "Wildcard matches /users/123, /users/abc, etc.",
+          "statusCode": 200,
+          "body": "{\"user\": {}, \"message\": \"User found\"}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        },
+        
+        "POST /users": {
+          "statusCode": 201,
+          "body": "{\"user\": {}, \"message\": \"User created successfully\"}",
+          "headers": [
+            {"key": "Content-Type", "value": "application/json"},
+            {"key": "Location", "value": "/users/{{faker.string.uuid}}"}
+          ]
+        },
+        
+        "PUT /users/*": {
+          "statusCode": 200,
+          "body": "{\"user\": {}, \"message\": \"User updated successfully\"}"
+        },
+        
+        "DELETE /users/*": {
+          "statusCode": 204,
+          "body": ""
+        }
+      },
+      
+      "fail": {
+        "_comment": "Fail state simulates server errors and failures",
+        
+        "GET /users": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Internal server error\", \"code\": \"SERVER_ERROR\"}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        },
+        
+        "GET /users/*": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Failed to fetch user\", \"code\": \"DATABASE_ERROR\"}"
+        },
+        
+        "POST /users": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Failed to create user\", \"code\": \"DATABASE_ERROR\"}"
+        },
+        
+        "PUT /users/*": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Failed to update user\", \"code\": \"DATABASE_ERROR\"}"
+        },
+        
+        "DELETE /users/*": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Failed to delete user\", \"code\": \"DATABASE_ERROR\"}"
+        }
+      },
+      
+      "notfound": {
+        "_comment": "Not found state simulates missing resources",
+        
+        "GET /users/*": {
+          "statusCode": 404,
+          "body": "{\"error\": \"User not found\", \"code\": \"NOT_FOUND\"}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        },
+        
+        "PUT /users/*": {
+          "statusCode": 404,
+          "body": "{\"error\": \"User not found\", \"code\": \"NOT_FOUND\"}"
+        },
+        
+        "DELETE /users/*": {
+          "statusCode": 404,
+          "body": "{\"error\": \"User not found\", \"code\": \"NOT_FOUND\"}"
+        }
+      },
+      
+      "unauthorized": {
+        "_comment": "Unauthorized state simulates authentication failures",
+        
+        "GET /users": {
+          "statusCode": 401,
+          "body": "{\"error\": \"Unauthorized\", \"code\": \"AUTH_REQUIRED\"}",
+          "headers": [
+            {"key": "Content-Type", "value": "application/json"},
+            {"key": "WWW-Authenticate", "value": "Bearer"}
+          ]
+        },
+        
+        "GET /users/*": {
+          "statusCode": 401,
+          "body": "{\"error\": \"Unauthorized\", \"code\": \"AUTH_REQUIRED\"}"
+        },
+        
+        "POST /users": {
+          "statusCode": 401,
+          "body": "{\"error\": \"Unauthorized\", \"code\": \"AUTH_REQUIRED\"}"
+        },
+        
+        "PUT /users/*": {
+          "statusCode": 401,
+          "body": "{\"error\": \"Unauthorized\", \"code\": \"AUTH_REQUIRED\"}"
+        },
+        
+        "DELETE /users/*": {
+          "statusCode": 401,
+          "body": "{\"error\": \"Unauthorized\", \"code\": \"AUTH_REQUIRED\"}"
+        }
+      },
+      
+      "validation": {
+        "_comment": "Validation state simulates input validation errors",
+        
+        "POST /users": {
+          "statusCode": 400,
+          "body": "{\"error\": \"Validation failed\", \"code\": \"VALIDATION_ERROR\", \"details\": [{\"field\": \"email\", \"message\": \"Invalid email format\"}, {\"field\": \"age\", \"message\": \"Must be a positive number\"}]}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        },
+        
+        "PUT /users/*": {
+          "statusCode": 400,
+          "body": "{\"error\": \"Validation failed\", \"code\": \"VALIDATION_ERROR\", \"details\": [{\"field\": \"firstName\", \"message\": \"Required field\"}]}"
+        }
+      },
+      
+      "slow": {
+        "_comment": "Slow state can be used with response delay settings in environment to simulate slow responses",
+        
+        "GET /users": {
+          "statusCode": 200,
+          "body": "{\"users\": [], \"total\": 100, \"message\": \"Response deliberately delayed\"}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        },
+        
+        "GET /users/*": {
+          "statusCode": 200,
+          "body": "{\"user\": {}, \"message\": \"Response deliberately delayed\"}"
+        }
+      }
+    }
+  },
+  
+  "fakerFactories": {
+    "_comment": "Faker factories define custom patterns that can be used in property overrides or inline in responses. These are merged with external factory files if both are provided.",
+    
+    "customUserId": "user_{{faker.string.alphanumeric(8)}}",
+    "customOrderId": "ORD-{{faker.number.int({min: 10000, max: 99999})}}",
+    "customEmail": "test+{{faker.string.alphanumeric(5)}}@example.com",
+    "apiKey": "sk_test_{{faker.string.alphanumeric(32)}}",
+    "timestamp": "{{faker.date.recent}}",
+    "version": "v{{faker.number.int({min: 1, max: 10})}}.{{faker.number.int({min: 0, max: 99})}}.{{faker.number.int({min: 0, max: 99})}}"
+  }
+}

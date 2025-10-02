@@ -256,8 +256,8 @@
         };
 
         const xBadgeMapping = {
-            // READY: { color: "green", position: "before", name: "READY" },
-            // NOT_READY: { color: "red", position: "before", name: "NOT READY" },
+            READY: { color: "green", position: "before", name: "READY" },
+            NOT_READY: { color: "red", position: "before", name: "NOT READY" },
             // PUBLIC: { color: "gray", position: "before", name: "PUBLIC" },
             // PENGGUNA: { color: "purple", position: "before", name: "PENGGUNA" },
             // PENYEDIA: { color: "orange", position: "before", name: "PENYEDIA" },
@@ -502,8 +502,8 @@
             const fragment = document.createDocumentFragment();
 
             Object.entries(xBadgeMapping).forEach(([badge, config]) => {
-                const button = document.createElement('button');
-                button.className = 'badge-filter';
+            //     const button = document.createElement('button');
+            //     button.className = 'badge-filter';
                 button.setAttribute('data-badge', badge);
                 button.textContent = config.name;
                 button.onclick = () => toggleFilter(badge, button);
@@ -540,7 +540,7 @@
             const filteredSpec = JSON.parse(JSON.stringify(state.spec));
             const badgeNameToKey = new Map(
                 Object.entries(xBadgeMapping).map(([key, value]) => [value.name, key])
-            );
+            // );
 
             // Filter paths
             Object.entries(filteredSpec.paths).forEach(([path, methods]) => {

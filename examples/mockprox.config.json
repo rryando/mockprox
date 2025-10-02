@@ -1,0 +1,141 @@
+{
+  "version": "1.0",
+  "dataGeneration": {
+    "arrays": {
+      "defaultCount": 10,
+      "minCount": 1,
+      "maxCount": 50
+    },
+    "propertyOverrides": {
+      "_comment": "Override specific property names with static values or faker patterns",
+      "email": "john.doe@gmail.com",
+      "userId": "{{faker 'string.uuid'}}",
+      "createdAt": "{{date '2020' (now) 'yyyy-MM-dd'}}",
+      "status": "active",
+      "name": "John Doe",
+      "id": "{{faker 'number.int' min=1 max=9999}}",
+      "phone": "+1-555-0100",
+      "country": "United States",
+      "verified": "{{faker 'datatype.boolean'}}",
+      "role": "user"
+    }
+  },
+  "responseStates": {
+    "defaultState": "success",
+    "states": {
+      "success": {
+        "/api/users": {
+          "statusCode": 200,
+          "body": {
+            "users": "{{repeat 10}}",
+            "total": 100,
+            "page": 1,
+            "message": "Users retrieved successfully"
+          },
+          "headers": {
+            "X-State": "success",
+            "X-Total-Count": "100"
+          }
+        },
+        "/api/orders": {
+          "statusCode": 200,
+          "body": {
+            "orders": "{{repeat 10}}",
+            "total": 250,
+            "message": "Orders retrieved successfully"
+          }
+        },
+        "/api/orders/*": {
+          "statusCode": 200,
+          "body": {
+            "order": {
+              "id": "{{faker 'string.uuid'}}",
+              "status": "completed",
+              "total": "{{faker 'number.float' min=10 max=500}}"
+            },
+            "message": "Order retrieved successfully"
+          }
+        },
+        "/api/products/*": {
+          "statusCode": 200,
+          "body": {
+            "product": {
+              "id": "{{faker 'string.uuid'}}",
+              "name": "{{faker 'commerce.productName'}}",
+              "price": "{{faker 'number.float' min=10 max=100}}",
+              "inStock": true
+            }
+          }
+        }
+      },
+      "fail": {
+        "/api/users": {
+          "statusCode": 500,
+          "body": {
+            "error": "Internal server error",
+            "code": "ERR_INTERNAL",
+            "message": "Failed to retrieve users"
+          },
+          "headers": {
+            "X-State": "fail"
+          }
+        },
+        "/api/orders": {
+          "statusCode": 503,
+          "body": {
+            "error": "Service unavailable",
+            "code": "ERR_SERVICE_UNAVAILABLE",
+            "message": "Orders service is temporarily unavailable"
+          }
+        },
+        "/api/orders/*": {
+          "statusCode": 404,
+          "body": {
+            "error": "Order not found",
+            "code": "ERR_NOT_FOUND",
+            "message": "The requested order does not exist"
+          }
+        },
+        "/api/products/*": {
+          "statusCode": 404,
+          "body": {
+            "error": "Product not found",
+            "code": "ERR_NOT_FOUND",
+            "message": "The requested product does not exist"
+          }
+        }
+      },
+      "unauthorized": {
+        "/*": {
+          "statusCode": 401,
+          "body": {
+            "error": "Unauthorized",
+            "code": "ERR_UNAUTHORIZED",
+            "message": "Authentication required"
+          },
+          "headers": {
+            "WWW-Authenticate": "Bearer"
+          }
+        }
+      },
+      "ratelimit": {
+        "/*": {
+          "statusCode": 429,
+          "body": {
+            "error": "Too many requests",
+            "code": "ERR_RATE_LIMIT",
+            "message": "Rate limit exceeded. Please try again later."
+          },
+          "headers": {
+            "Retry-After": "60"
+          }
+        }
+      }
+    }
+  },
+  "fakerFactories": {
+    "_comment": "Inline faker factories (alternative to external --faker-factory file)",
+    "url": "{{faker 'internet.url'}}",
+    "customField": "{{faker 'lorem.sentence'}}"
+  }
+}

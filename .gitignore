@@ -53,3 +53,11 @@ wip.md
 
 # env files
 .env*
+
+
+.claude
+agents/*
+CLAUDE.md
+AGENTS.md
+.github/prompts/*
+.github/chatmodes/*

@@ -18,6 +18,7 @@ import {
 } from 'mockprox-commons';
 import { OpenAPI, OpenAPIV2, OpenAPIV3 } from 'openapi-types';
 import { join } from 'path';
+import { MockproxConfigLoader } from './mockprox-config-loader';
 import { generateModelFromSwagger } from './openapi-to-ts-def';
 import { routesFromFolder } from './utils';
 type SpecificationVersions = 'SWAGGER' | 'OPENAPI_V3';
@@ -30,6 +31,8 @@ type SpecificationVersions = 'SWAGGER' | 'OPENAPI_V3';
  *
  */
 export class OpenAPIConverter {
+  private configLoader?: MockproxConfigLoader;
+  
   private defaultPropertyNameFactories = {
     // url: () => "{{faker 'internet.url'}}",
     email: () => "{{faker 'internet.email'}}",
@@ -47,26 +50,29 @@ export class OpenAPIConverter {
   };
 
   private loadPropertyNameFactories(customFactoriesPath?: string) {
-    if (!customFactoriesPath) {
-      return this.defaultPropertyNameFactories;
+    let mergedFactories = { ...this.defaultPropertyNameFactories };
+    
+    // Merge inline faker factories from config first
+    if (this.configLoader?.isLoaded()) {
+      const inlineFactories = this.configLoader.getFakerFactories();
+      mergedFactories = { ...mergedFactories, ...inlineFactories };
+    }
+    
+    // Load external file (takes priority over inline)
+    if (customFactoriesPath) {
+      try {
+        const absolutePath = require.resolve(customFactoriesPath, {
+          paths: [process.cwd()]
+        });
+
+        const customFactories = require(absolutePath);
+        mergedFactories = { ...mergedFactories, ...customFactories };
+      } catch (error) {
+        console.error('Error loading custom factories:', error);
+      }
     }
 
-    try {
-      const absolutePath = require.resolve(customFactoriesPath, {
-        paths: [process.cwd()]
-      });
-
-      const customFactories = require(absolutePath);
-
-      // Create a new object for merging
-      const mergedFactories = Object.assign(this.defaultPropertyNameFactories, customFactories);
-
-
-      return mergedFactories;
-    } catch (error) {
-      console.error('Error loading custom factories:', error);
-      return this.defaultPropertyNameFactories;
-    }
+    return mergedFactories;
   }
 
   /**
@@ -78,8 +84,11 @@ export class OpenAPIConverter {
   public async convertFromOpenAPI(
     filePath: string,
     port?: number,
-    customFactoriesPath?: string
+    customFactoriesPath?: string,
+    configLoader?: MockproxConfigLoader
   ): Promise<Environment | null> {
+    // Store config loader for use in generateSchema
+    this.configLoader = configLoader;
     // .bind() due to https://github.com/APIDevTools/json-schema-ref-parser/issues/139#issuecomment-940500698
     const parsedAPI: OpenAPI.Document = await openAPI.dereference.bind(openAPI)(
       filePath,
@@ -732,7 +741,13 @@ export class OpenAPIConverter {
       boolean: () => "{{faker 'datatype.boolean'}}",
       array: (arraySchema) => {
         const newObject = this.generateSchema(arraySchema.items);
-        return arraySchema.collectionFormat === 'csv' ? newObject : [newObject];
+        // Use config array count or default to single item for CSV format
+        if (arraySchema.collectionFormat === 'csv') {
+          return newObject;
+        }
+        // For non-CSV arrays, generate multiple items based on config
+        const arrayCount = this.configLoader?.getArrayCount() ?? 10;
+        return Array(arrayCount).fill(null).map(() => this.generateSchema(arraySchema.items));
       },
       object: (objectSchema) => {
         const newObject = {};
@@ -740,8 +755,11 @@ export class OpenAPIConverter {
 
         if (properties) {
           Object.keys(properties).forEach((propertyName) => {
-            // Check if we have a special factory for this property name
-            if (propertyNameFactories[propertyName]) {
+            // Priority: config override > property name factories > default generation
+            const configOverride = this.configLoader?.getPropertyOverride(propertyName);
+            if (configOverride) {
+              newObject[propertyName] = configOverride;
+            } else if (propertyNameFactories[propertyName]) {
               newObject[propertyName] = propertyNameFactories[propertyName]();
             } else {
               newObject[propertyName] = this.generateSchema(

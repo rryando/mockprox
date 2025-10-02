@@ -8,3 +8,8 @@ export * from './libs/server/server';
 export * from './libs/template-parser';
 export * from './libs/utils';
 
+// Export unified config types and loaders
+export { MockproxConfigGenerator } from './libs/mockprox-config-generator';
+export { MockproxConfigLoader } from './libs/mockprox-config-loader';
+export * from './types/mockprox-config';
+

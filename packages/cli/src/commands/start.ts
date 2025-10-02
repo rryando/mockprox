@@ -1,19 +1,20 @@
+import { Command, Flags } from '@oclif/core';
 import {
-  Environment,
-  FakerAvailableLocales,
-  FakerAvailableLocalesList,
-  ServerErrorCodes,
-  ServerOptions,
-  defaultEnvironmentVariablesPrefix,
-  defaultMaxTransactionLogs
+    Environment,
+    FakerAvailableLocales,
+    FakerAvailableLocalesList,
+    ServerErrorCodes,
+    ServerOptions,
+    defaultEnvironmentVariablesPrefix,
+    defaultMaxTransactionLogs
 } from 'mockprox-commons';
 import {
-  MockproxServer,
-  ServerMessages,
-  createLoggerInstance,
-  listenServerEvents
+    MockproxConfigLoader,
+    MockproxServer,
+    ServerMessages,
+    createLoggerInstance,
+    listenServerEvents
 } from 'mockprox-commons-server';
-import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { format } from 'util';
 import { Config } from '../config';
@@ -116,6 +117,11 @@ export default class Start extends Command {
       description: 'Path to a custom Faker.js factories file',
       default: undefined
     }),
+    'config': Flags.string({
+      char: 'C',
+      description: 'Path to unified Mockprox config file (optional)',
+      default: undefined
+    }),
     'doc': Flags.boolean({
       description: 'Generate API documentation',
       default: false
@@ -137,6 +143,22 @@ export default class Start extends Command {
     }
 
     try {
+      // Load unified config if provided
+      let configLoader: MockproxConfigLoader | undefined;
+      if (userFlags.config) {
+        try {
+          configLoader = new MockproxConfigLoader();
+          configLoader.loadConfig(userFlags.config);
+          this.log(`✅ Loaded config: ${userFlags.config}`);
+        } catch (error) {
+          if (error instanceof Error) {
+            this.error(`Failed to load config: ${error.message}`, {
+              exit: 1
+            });
+          }
+        }
+      }
+
       const parsedEnvironments = await parseDataFiles(
         userFlags.data,
         {
@@ -147,7 +169,8 @@ export default class Start extends Command {
           proxyFirst: userFlags['proxy-first'],
           customFactoriesPath: userFlags['faker-factory']
         },
-        userFlags.repair
+        userFlags.repair,
+        configLoader
       );
 
       for (const environmentInfo of parsedEnvironments) {
@@ -166,6 +189,7 @@ export default class Start extends Command {
                 )
               },
           disabledRoutes: userFlags['disable-routes'],
+          configLoader,
           fakerOptions: {
             locale: userFlags['faker-locale'] as FakerAvailableLocales,
             seed: userFlags['faker-seed']
@@ -191,21 +215,25 @@ export default class Start extends Command {
       environment: Environment;
       logTransaction?: boolean;
       fileTransportOptions?: Parameters<typeof createLoggerInstance>[0] | null;
+      configLoader?: MockproxConfigLoader;
     }
   ) => {
     const logger = createLoggerInstance(parameters.fileTransportOptions);
-    const server = new MockproxServer(parameters.environment, {
-      environmentDirectory: parameters.environmentDirectory,
-      disabledRoutes: parameters.disabledRoutes,
-      fakerOptions: parameters.fakerOptions,
-      envVarsPrefix: parameters.envVarsPrefix,
-      enableAdminApi: parameters.enableAdminApi,
-      disableTls: parameters.disableTls,
-      maxTransactionLogs: parameters.maxTransactionLogs,
-      enableRandomLatency: parameters.enableRandomLatency,
-      doc: parameters.doc,
-      
-    });
+    const server = new MockproxServer(
+      parameters.environment,
+      {
+        environmentDirectory: parameters.environmentDirectory,
+        disabledRoutes: parameters.disabledRoutes,
+        fakerOptions: parameters.fakerOptions,
+        envVarsPrefix: parameters.envVarsPrefix,
+        enableAdminApi: parameters.enableAdminApi,
+        disableTls: parameters.disableTls,
+        maxTransactionLogs: parameters.maxTransactionLogs,
+        enableRandomLatency: parameters.enableRandomLatency,
+        doc: parameters.doc
+      },
+      parameters.configLoader
+    );
 
     listenServerEvents(
       server,

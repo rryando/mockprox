@@ -136,6 +136,12 @@ Key features and their options:
 --faker-factory=<name>  Custom Faker.js factory to use (default: 'default')
 ```
 
+#### Unified Configuration System
+```
+--config=<path>         Path to unified Mockprox config file
+                        Supports data generation, response states, and faker factories
+```
+
 Example usage:
 ```bash
 # Start mock server with documentation
@@ -146,7 +152,182 @@ mockprox-cli start --data ./api.json --port 3000 --doc
 
 # Start with proxy-first mode
 mockprox-cli start --data ./api.json --proxy-url https://api.example.com --proxy-first
+
+# Start with unified config
+mockprox-cli start --data ./api.json --config ./mockprox.config.json
 ```
+
+### Generate Config Command
+
+Generate a unified configuration file from an OpenAPI specification. This command intelligently extracts property names, endpoints, and creates a base configuration that you can customize.
+
+```bash
+mockprox-cli generate-config --input <openapi-spec> [--output <config-file>] [--force]
+```
+
+**Options:**
+```
+  -i, --input <path>     [required] Path to OpenAPI specification file (JSON or YAML)
+  -o, --output <path>    Path for generated config file (default: ./mockprox.config.json)
+  -f, --force            Overwrite existing config file
+```
+
+**Examples:**
+```bash
+# Generate config from OpenAPI spec
+mockprox-cli generate-config --input ./api.json
+
+# Generate with custom output path
+mockprox-cli generate-config --input ./openapi.yml --output ./my-config.json
+
+# Overwrite existing config
+mockprox-cli generate-config --input ./api.json --force
+```
+
+### Unified Configuration System
+
+The unified configuration system consolidates data generation, response state routing, and faker factories into a single file for easier management.
+
+#### Configuration Structure
+
+```json
+{
+  "version": "1.0",
+  "dataGeneration": {
+    "arrays": {
+      "defaultCount": 10
+    },
+    "propertyOverrides": {
+      "email": "{{faker.internet.email}}",
+      "status": "active"
+    }
+  },
+  "responseStates": {
+    "defaultState": "success",
+    "states": {
+      "success": {
+        "GET /users": {
+          "statusCode": 200,
+          "body": "{\"users\": []}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        }
+      },
+      "fail": {
+        "GET /users": {
+          "statusCode": 500,
+          "body": "{\"error\": \"Server error\"}",
+          "headers": [{"key": "Content-Type", "value": "application/json"}]
+        }
+      }
+    }
+  },
+  "fakerFactories": {
+    "companyName": "{{faker.company.name}}"
+  }
+}
+```
+
+#### Workflow
+
+1. **Generate**: Create base config from OpenAPI
+   ```bash
+   mockprox-cli generate-config --input ./api.json
+   ```
+
+2. **Customize**: Edit `mockprox.config.json` to fit your needs
+   - Set array counts
+   - Add property overrides (static values or faker patterns)
+   - Configure response states for different scenarios
+
+3. **Use**: Start server with your config
+   ```bash
+   mockprox-cli start --data ./api.json --config ./mockprox.config.json
+   ```
+
+4. **Test**: Switch states via query param
+   ```bash
+   curl http://localhost:3000/users           # Uses default state (success)
+   curl http://localhost:3000/users?state=fail  # Uses fail state
+   ```
+
+#### Features
+
+**1. Data Generation Control**
+- Set default array count (1-1000, default: 10)
+- Override property values with static values or faker patterns
+- Applies during OpenAPI schema generation
+
+**2. Response State Routing**
+- Define multiple states (success, fail, etc.)
+- Route patterns support exact matches and wildcards
+- Switch states via `?state=<name>` query parameter
+- Exact route matches take priority over wildcards
+
+**3. Inline Faker Factories**
+- Define faker patterns directly in config
+- Alternative to external `.js` factory files
+- Merged with existing factory system
+
+#### Priority Order
+
+When multiple configuration sources exist:
+1. **Config property overrides** (highest priority)
+2. **Inline faker factories** (config file)
+3. **External faker factory** (--faker-factory file)
+4. **OpenAPI schema defaults** (lowest priority)
+
+#### Route Pattern Matching
+
+Response states support both exact and wildcard patterns:
+
+```json
+{
+  "responseStates": {
+    "states": {
+      "success": {
+        "GET /users": {},      // Exact match
+        "GET /users/*": {},    // Wildcard - matches /users/123, /users/abc, etc.
+        "POST /users": {}      // Different method
+      }
+    }
+  }
+}
+```
+
+**Matching Rules:**
+- Exact patterns are checked first
+- Wildcard patterns (`*`) match any characters
+- Method (GET, POST, etc.) must match exactly
+
+#### Troubleshooting
+
+**Array count not applied?**
+- Verify config file has `dataGeneration.arrays.defaultCount`
+- Check for "✅ Loaded config" message on server start
+- Ensure config path is correct
+
+**Property override not working?**
+- Property names must match exactly (case-sensitive)
+- Static values must be valid JSON strings
+- Faker patterns must use `{{}}` syntax
+
+**State switching not working?**
+- Verify route pattern matches exactly (e.g., "GET /users")
+- Check state name exists in config
+- Use exact match for specific routes, wildcards for patterns
+
+**Config validation errors?**
+- Version field is required
+- Array count must be 1-1000
+- Response state structure must be valid
+
+#### Backward Compatibility
+
+The unified config system is **fully backward compatible**:
+- `--config` flag is optional
+- Existing `--faker-factory` files still work
+- No changes to existing commands or behavior
+- Gracefully degrades if config not provided
 
 [Additional command details and examples removed for brevity...]
 
