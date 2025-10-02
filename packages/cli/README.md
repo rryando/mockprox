@@ -184,6 +184,47 @@ mockprox-cli generate-config --input ./openapi.yml --output ./my-config.json
 mockprox-cli generate-config --input ./api.json --force
 ```
 
+### Generate Docs Command
+
+Generate static ReDoc documentation from an OpenAPI specification. Perfect for hosting on GitHub Pages, Netlify, Vercel, or any static hosting service.
+
+```bash
+mockprox-cli generate-docs <openapi-spec> [--output <directory>] [--title <title>]
+```
+
+**Options:**
+```
+  INPUT                  [required] Path to OpenAPI specification file (JSON or YAML)
+  -o, --output <path>    Output directory for generated documentation (default: ./docs)
+  -t, --title <string>   Custom title for the documentation page
+```
+
+**Examples:**
+```bash
+# Generate documentation with default settings
+mockprox-cli generate-docs ./api.json
+
+# Generate to custom directory with custom title
+mockprox-cli generate-docs ./openapi.yml --output ./github-pages --title "My API Docs"
+
+# Quick GitHub Pages deployment
+mockprox-cli generate-docs ./api.yml --output ./docs
+git add docs/ && git commit -m "Add API docs" && git push
+# Then enable GitHub Pages in repo settings → Pages → Source: /docs
+```
+
+**What it generates:**
+- `index.html` - Static ReDoc documentation page
+- `api-spec.yml` (or `.json`) - Your OpenAPI specification
+- `redoc.standalone.js` - ReDoc library (if available)
+
+**Deployment:**
+See [GITHUB-PAGES-DEPLOYMENT.md](../GITHUB-PAGES-DEPLOYMENT.md) for detailed deployment instructions including:
+- GitHub Pages setup
+- Custom domain configuration  
+- GitHub Actions automation
+- Alternative hosting options (Netlify, Vercel, AWS S3)
+
 ### Unified Configuration System
 
 The unified configuration system consolidates data generation, response state routing, and faker factories into a single file for easier management.
