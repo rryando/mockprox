@@ -122,7 +122,9 @@ Key features and their options:
 #### Documentation Server
 ```
 --doc                    Enable API documentation server (port+1)
-                        Serves ReDoc UI and TypeScript types
+                        Serves ReDoc UI and TypeScript types for development
+                        
+Note: For static documentation deployment, use 'generate-docs' command instead
 ```
 
 #### Advanced Proxy Features
@@ -144,11 +146,15 @@ Key features and their options:
 
 Example usage:
 ```bash
-# Start mock server with documentation
+# Start mock server with live documentation server
 mockprox-cli start --data ./api.json --port 3000 --doc
 # This will serve:
 # - Mock API on port 3000
-# - ReDoc UI and types on port 3001
+# - Live ReDoc UI and types on port 3001
+
+# For static documentation deployment (GitHub Pages, etc.)
+# Use the generate-docs command instead:
+mockprox-cli generate-docs ./api.json --output ./docs --with-config
 
 # Start with proxy-first mode
 mockprox-cli start --data ./api.json --proxy-url https://api.example.com --proxy-first
@@ -186,10 +192,10 @@ mockprox-cli generate-config --input ./api.json --force
 
 ### Generate Docs Command
 
-Generate static ReDoc documentation from an OpenAPI specification. Perfect for hosting on GitHub Pages, Netlify, Vercel, or any static hosting service.
+Generate static ReDoc documentation with TypeScript types from an OpenAPI specification. Perfect for hosting on GitHub Pages, Netlify, Vercel, or any static hosting service. This command automatically generates TypeScript type definitions and can optionally generate a mockprox config file.
 
 ```bash
-mockprox-cli generate-docs <openapi-spec> [--output <directory>] [--title <title>]
+mockprox-cli generate-docs <openapi-spec> [options]
 ```
 
 **Options:**
@@ -197,18 +203,27 @@ mockprox-cli generate-docs <openapi-spec> [--output <directory>] [--title <title
   INPUT                  [required] Path to OpenAPI specification file (JSON or YAML)
   -o, --output <path>    Output directory for generated documentation (default: ./docs)
   -t, --title <string>   Custom title for the documentation page
+  -c, --with-config      Also generate mockprox.config.json in the output directory
+      --no-with-types    Disable TypeScript type generation (enabled by default)
 ```
 
 **Examples:**
 ```bash
-# Generate documentation with default settings
+# Generate documentation with TypeScript types (default)
 mockprox-cli generate-docs ./api.json
 
 # Generate to custom directory with custom title
 mockprox-cli generate-docs ./openapi.yml --output ./github-pages --title "My API Docs"
 
-# Quick GitHub Pages deployment
-mockprox-cli generate-docs ./api.yml --output ./docs
+# Generate docs + config file for complete setup
+mockprox-cli generate-docs ./api.json --with-config
+# Creates: ./docs/index.html, ./docs/model/types.ts, ./docs/mockprox.config.json
+
+# Generate docs without TypeScript types
+mockprox-cli generate-docs ./api.json --no-with-types
+
+# Complete workflow for GitHub Pages
+mockprox-cli generate-docs ./api.yml --output ./docs --with-config
 git add docs/ && git commit -m "Add API docs" && git push
 # Then enable GitHub Pages in repo settings → Pages → Source: /docs
 ```
@@ -216,7 +231,32 @@ git add docs/ && git commit -m "Add API docs" && git push
 **What it generates:**
 - `index.html` - Static ReDoc documentation page
 - `api-spec.yml` (or `.json`) - Your OpenAPI specification
+- `model/types.ts` - TypeScript type definitions (unless disabled)
+- `mockprox.config.json` - Config file (if `--with-config` used)
 - `redoc.standalone.js` - ReDoc library (if available)
+
+**Recommended Workflow:**
+```bash
+# 1. Generate complete documentation package
+mockprox-cli generate-docs ./openapi.json --output ./docs --with-config
+
+# 2. Customize the config file (optional)
+# Edit ./docs/mockprox.config.json to adjust array counts, add overrides, etc.
+
+# 3. Test locally with mock server
+mockprox-cli start --data ./openapi.json --config ./docs/mockprox.config.json
+
+# 4. Deploy documentation to GitHub Pages
+git add docs/ && git commit -m "Add API documentation" && git push
+# Enable GitHub Pages: Settings → Pages → Source: /docs
+```
+
+**Benefits:**
+- ✅ TypeScript types included automatically
+- ✅ Optional config generation for quick setup
+- ✅ All files in one directory for easy deployment
+- ✅ Works offline after deployment
+- ✅ No server needed for static hosting
 
 **Deployment:**
 See [GITHUB-PAGES-DEPLOYMENT.md](../GITHUB-PAGES-DEPLOYMENT.md) for detailed deployment instructions including:

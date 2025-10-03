@@ -24,25 +24,27 @@ export class MockproxConfigGenerator {
   }
 
   /**
-   * Generate data generation config from spec
+   * Get available property names for documentation
    */
-  private generateDataConfig(spec: any): {
+  public getAvailableProperties(spec: any): string[] {
+    return this.extractPropertyNames(spec);
+  }
+
+  /**
+   * Generate data generation config from spec
+   * Returns empty propertyOverrides by default - users can add their own
+   */
+  private generateDataConfig(_spec: any): {
     arrays: { defaultCount: number };
     propertyOverrides: Record<string, string>;
   } {
-    const propertyNames = this.extractPropertyNames(spec);
-    const overrides: Record<string, string> = {};
-
-    // Add placeholder for common property names
-    for (const prop of propertyNames) {
-      overrides[prop] = '{{faker.string.sample}}';
-    }
-
+    // Return empty overrides - let OpenAPI spec define the defaults
+    // Users can add their own overrides as needed
     return {
       arrays: {
         defaultCount: 10
       },
-      propertyOverrides: overrides
+      propertyOverrides: {}
     };
   }
 
@@ -71,9 +73,14 @@ export class MockproxConfigGenerator {
 
     for (const endpoint of endpoints) {
       // Remove leading slash from path to match Mockoon route format
-      const path = endpoint.path.startsWith('/')
+      let path = endpoint.path.startsWith('/')
         ? endpoint.path.substring(1)
         : endpoint.path;
+      
+      // Convert OpenAPI parameter format {param} to Express format :param
+      // This matches the internal route storage format used by Mockprox/Mockoon
+      path = path.replace(/{(\w+)}/gi, ':$1');
+      
       const routePattern = `${endpoint.method.toUpperCase()} ${path}`;
 
       // All endpoints default to "random" state (use auto-generated mock)
@@ -89,8 +96,17 @@ export class MockproxConfigGenerator {
 
   /**
    * Generate inline faker factories
+   * Returns empty factories by default - users can add their own
    */
-  private generateFakerFactories(spec: any): Record<string, string> {
+  private generateFakerFactories(_spec: any): Record<string, string> {
+    // Return empty factories - users can add custom ones as needed
+    return {};
+  }
+
+  /**
+   * Get suggested faker patterns for documentation
+   */
+  public getSuggestedFactories(spec: any): Record<string, string> {
     const propertyNames = this.extractPropertyNames(spec);
     const factories: Record<string, string> = {};
 

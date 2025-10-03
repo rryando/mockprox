@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "dataGeneration": {
+    "arrays": {
+      "defaultCount": 10
+    },
+    "propertyOverrides": {}
+  },
+  "urlStates": {
+    "GET api/users/:id": {
+      "state": "fail"
+    },
+    "GET api/products": {
+      "state": "fail"
+    }
+  },
+  "fakerFactories": {}
+}

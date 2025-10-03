@@ -148,4 +148,9 @@ export type ServerOptions = {
    * Generate API documentation
    */
   doc: boolean;
+
+  /**
+   * Output path for generated documentation files (for static hosting)
+   */
+  docOutputPath?: string;
 };

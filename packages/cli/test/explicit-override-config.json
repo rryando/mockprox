@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0",
+  "urlStates": {
+    "POST api/v1/contacts/connect": {
+      "state": "fail",
+      "statusCode": 404,
+      "body": "{\"error\": \"Explicit 404 override\"}"
+    }
+  }
+}

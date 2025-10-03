@@ -85,7 +85,8 @@ export class OpenAPIConverter {
     filePath: string,
     port?: number,
     customFactoriesPath?: string,
-    configLoader?: MockproxConfigLoader
+    configLoader?: MockproxConfigLoader,
+    docOutputPath?: string
   ): Promise<Environment | null> {
     // Store config loader for use in generateSchema
     this.configLoader = configLoader;
@@ -104,8 +105,8 @@ export class OpenAPIConverter {
       const response = await fetch(filePath);
       const fileContent = await response.text();
 
-      // Create public directory if it doesn't exist
-      const publicPath = join(__dirname, '../public');
+      // Use custom output path or default to public directory
+      const publicPath = docOutputPath || join(__dirname, '../public');
       mkdirSync(publicPath, { recursive: true });
 
       // Get file extension from URL or default to .json
@@ -138,8 +139,8 @@ export class OpenAPIConverter {
       // Handle local file
       const fileContent = readFileSync(filePath, 'utf8');
 
-      // Create public directory if it doesn't exist
-      const publicPath = join(__dirname, '../public');
+      // Use custom output path or default to public directory
+      const publicPath = docOutputPath || join(__dirname, '../public');
       mkdirSync(publicPath, { recursive: true });
 
       // Get file extension from local path or default to .json

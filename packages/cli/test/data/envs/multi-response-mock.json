@@ -1,0 +1,97 @@
+{
+  "uuid": "test-multi-response",
+  "lastMigration": 33,
+  "name": "Multi Response Test",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3465,
+  "routes": [
+    {
+      "uuid": "route-1",
+      "documentation": "Route with multiple responses",
+      "method": "get",
+      "endpoint": "api/users/:id",
+      "responses": [
+        {
+          "uuid": "response-success",
+          "body": "{\"id\": 1, \"name\": \"John Doe\", \"status\": \"active\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+        
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "route-2",
+      "documentation": "Route with only success response",
+      "method": "get",
+      "endpoint": "api/products",
+      "responses": [
+        {
+          "uuid": "response-products-success",
+          "body": "[{\"id\": 1, \"name\": \"Product 1\"}]",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "cors": true,
+  "headers": [{ "key": "Content-Type", "value": "application/json" }],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "proxyRemovePrefix": false,
+  "hostname": "",
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "data": [],
+  "folders": [],
+  "rootChildren": [
+    { "type": "route", "uuid": "route-1" },
+    { "type": "route", "uuid": "route-2" }
+  ],
+  "callbacks": []
+}

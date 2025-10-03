@@ -6,47 +6,47 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import { createReadStream, mkdirSync, readFile, readFileSync, statSync } from 'fs';
 import type { RequestListener } from 'http';
 import {
-    IncomingMessage,
-    createServer as httpCreateServer,
-    Server as httpServer
+  IncomingMessage,
+  createServer as httpCreateServer,
+  Server as httpServer
 } from 'http';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
-    createServer as httpsCreateServer,
-    Server as httpsServer
+  createServer as httpsCreateServer,
+  Server as httpsServer
 } from 'https';
 import killable from 'killable';
 import { lookup as mimeTypeLookup } from 'mime-types';
 import {
-    BINARY_BODY,
-    BodyTypes,
-    CORSHeaders,
-    Callback,
-    CallbackInvocation,
-    Environment,
-    FileExtensionsWithTemplating,
-    GetContentType,
-    GetRouteResponseContentType,
-    Header,
-    IsValidURL,
-    Methods,
-    MimeTypesWithTemplating,
-    ParsedJSONBodyMimeTypes,
-    ParsedXMLBodyMimeTypes,
-    ProcessedDatabucket,
-    Route,
-    RouteResponse,
-    RouteType,
-    ServerErrorCodes,
-    ServerEvents,
-    ServerOptions,
-    StreamingMode,
-    Transaction,
-    defaultEnvironmentVariablesPrefix,
-    defaultMaxTransactionLogs,
-    generateUUID,
-    getLatency,
-    stringIncludesArrayItems
+  BINARY_BODY,
+  BodyTypes,
+  CORSHeaders,
+  Callback,
+  CallbackInvocation,
+  Environment,
+  FileExtensionsWithTemplating,
+  GetContentType,
+  GetRouteResponseContentType,
+  Header,
+  IsValidURL,
+  Methods,
+  MimeTypesWithTemplating,
+  ParsedJSONBodyMimeTypes,
+  ParsedXMLBodyMimeTypes,
+  ProcessedDatabucket,
+  Route,
+  RouteResponse,
+  RouteType,
+  ServerErrorCodes,
+  ServerEvents,
+  ServerOptions,
+  StreamingMode,
+  Transaction,
+  defaultEnvironmentVariablesPrefix,
+  defaultMaxTransactionLogs,
+  generateUUID,
+  getLatency,
+  stringIncludesArrayItems
 } from 'mockprox-commons';
 import { basename, extname, join } from 'path';
 import { match } from 'path-to-regexp';
@@ -68,25 +68,25 @@ import { ResponseRulesInterpreter } from '../response-rules-interpreter';
 import { TemplateParser } from '../template-parser';
 import { requestHelperNames } from '../templating-helpers/request-helpers';
 import {
-    CreateCallbackInvocation,
-    CreateInFlightRequest,
-    CreateTransaction,
-    TransformHeaders,
-    dedupSlashes,
-    isBodySupportingMethod,
-    preparePath,
-    resolvePathFromEnvironment,
-    routesFromFolder,
+  CreateCallbackInvocation,
+  CreateInFlightRequest,
+  CreateTransaction,
+  TransformHeaders,
+  dedupSlashes,
+  isBodySupportingMethod,
+  preparePath,
+  resolvePathFromEnvironment,
+  routesFromFolder,
 } from '../utils';
 import { createAdminEndpoint } from './admin-api';
 import { CrudRouteIds, crudRoutesBuilder, databucketActions } from './crud';
 import {
-    BroadcastContext,
-    DelegatedBroadcastHandler,
-    getSafeStreamingInterval,
-    isWebSocketOpen,
-    messageToString,
-    serveFileContentInWs
+  BroadcastContext,
+  DelegatedBroadcastHandler,
+  getSafeStreamingInterval,
+  isWebSocketOpen,
+  messageToString,
+  serveFileContentInWs
 } from './ws';
 
 /**
@@ -113,7 +113,8 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     enableRandomLatency: false,
     maxFileUploads: 10,
     maxFileSize: 10 * 1024 * 1024, // 10MB
-    doc: false
+    doc: false,
+    docOutputPath: undefined
   };
   private transactionLogs: Transaction[] = [];
   private configLoader?: MockproxConfigLoader;
@@ -142,7 +143,8 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
     // Create and start documentation server if enabled
     if (this.options.doc) {
       const docApp = express();
-      const publicPath = join(__dirname, '../../../cjs/public');
+      // Use custom output path if provided, otherwise use built-in public directory
+      const publicPath = this.options.docOutputPath || join(__dirname, '../../../cjs/public');
       
       // Ensure public directory exists
       mkdirSync(publicPath, { recursive: true });
@@ -1251,14 +1253,11 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
         );
 
         if (urlState) {
-          // If state is "random", fall through to default mock generation
-          // If state has overrides (statusCode, body, headers), use them
-          if (
-            urlState.state !== 'random' ||
-            urlState.statusCode ||
-            urlState.body
-          ) {
-            // Build RouteResponse from urlState overrides
+          // Check if there are explicit overrides
+          const hasOverrides = urlState.statusCode || urlState.body || urlState.headers;
+          
+          if (hasOverrides) {
+            // Explicit overrides provided - use them
             enabledRouteResponse = {
               ...currentRoute.responses[0], // Start with first route response as base
               statusCode: urlState.statusCode ?? 200,
@@ -1266,7 +1265,15 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
               headers:
                 urlState.headers ?? currentRoute.responses[0]?.headers ?? []
             };
+          } else if (urlState.state !== 'random') {
+            // State without overrides - intelligently select from available responses
+            // "success" -> 2xx, "fail" -> 4xx/5xx, custom -> try to match
+            enabledRouteResponse = this.selectResponseByState(
+              currentRoute.responses,
+              urlState.state
+            );
           }
+          // If state is "random" with no overrides, fall through to normal selection
         }
       }
 
@@ -2024,6 +2031,41 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
   ) => {
     this.sendError(response, error, 500);
   };
+
+  /**
+   * Select a response from available responses based on state name
+   * @param responses Available route responses
+   * @param state State name ("success", "fail", or custom)
+   * @returns Selected RouteResponse or undefined
+   */
+  private selectResponseByState(
+    responses: RouteResponse[],
+    state: string
+  ): RouteResponse | undefined {
+    if (!responses || responses.length === 0) {
+      return undefined;
+    }
+
+    // State matching logic
+    if (state === 'success') {
+      // Find first 2xx response
+      return responses.find((r) => r.statusCode >= 200 && r.statusCode < 300);
+    } else if (state === 'fail') {
+      // Find first 4xx or 5xx response
+      return responses.find((r) => r.statusCode >= 400);
+    } else {
+      // Custom state - try to find response with matching label
+      const matchingResponse = responses.find(
+        (r) => r.label?.toLowerCase() === state.toLowerCase()
+      );
+      if (matchingResponse) {
+        return matchingResponse;
+      }
+
+      // Fallback to first response if no label match
+      return responses[0];
+    }
+  }
 
   /**
    * Set the provided headers on the target. Use different headers accessors

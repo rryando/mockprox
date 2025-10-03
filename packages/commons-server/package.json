@@ -1,7 +1,7 @@
 {
   "name": "mockprox-commons-server",
   "description": "Mockprox's commons server library. Used in Mockprox CLI.",
-  "version": "2.0.0",
+  "version": "2.2.8",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",
@@ -17,6 +17,19 @@
   },
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
   "files": [
     "dist/*"
   ],
@@ -45,7 +58,7 @@
     "jsonpath-plus": "10.1.0",
     "killable": "1.0.1",
     "mime-types": "2.1.35",
-    "mockprox-commons": "1.0.7",
+    "mockprox-commons": "2.2.6",
     "object-path": "0.11.8",
     "path-to-regexp": "8.2.0",
     "qs": "6.13.0",

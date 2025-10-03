@@ -1,19 +1,19 @@
 import { Command, Flags } from '@oclif/core';
 import {
-    Environment,
-    FakerAvailableLocales,
-    FakerAvailableLocalesList,
-    ServerErrorCodes,
-    ServerOptions,
-    defaultEnvironmentVariablesPrefix,
-    defaultMaxTransactionLogs
+  Environment,
+  FakerAvailableLocales,
+  FakerAvailableLocalesList,
+  ServerErrorCodes,
+  ServerOptions,
+  defaultEnvironmentVariablesPrefix,
+  defaultMaxTransactionLogs
 } from 'mockprox-commons';
 import {
-    MockproxConfigLoader,
-    MockproxServer,
-    ServerMessages,
-    createLoggerInstance,
-    listenServerEvents
+  MockproxConfigLoader,
+  MockproxServer,
+  ServerMessages,
+  createLoggerInstance,
+  listenServerEvents
 } from 'mockprox-commons-server';
 import { join } from 'path';
 import { format } from 'util';
@@ -125,6 +125,10 @@ export default class Start extends Command {
     'doc': Flags.boolean({
       description: 'Generate API documentation',
       default: false
+    }),
+    'doc-output': Flags.string({
+      description: 'Output directory for documentation files (for static hosting)',
+      default: undefined
     })
   };
 
@@ -167,7 +171,8 @@ export default class Start extends Command {
           proxyMode: userFlags['proxy-url'] !== undefined,
           proxyHost: userFlags['proxy-url'],
           proxyFirst: userFlags['proxy-first'],
-          customFactoriesPath: userFlags['faker-factory']
+          customFactoriesPath: userFlags['faker-factory'],
+          docOutputPath: userFlags['doc-output']
         },
         userFlags.repair,
         configLoader
@@ -200,7 +205,7 @@ export default class Start extends Command {
           maxTransactionLogs: userFlags['max-transaction-logs'],
           enableRandomLatency: userFlags['enable-random-latency'],
           doc: userFlags['doc'],
-          
+          docOutputPath: userFlags['doc-output']
         });
       }
     } catch (error) {

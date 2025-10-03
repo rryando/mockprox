@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "urlStates": {
+    "POST api/v1/contacts/connect": {
+      "state": "fail"
+    },
+    "GET api/v1/cases/:caseId": {
+      "state": "fail"
+    },
+    "GET api/v1/cases/:caseId/internal-notes": {
+      "state": "fail"
+    },
+    "POST api/v1/validation/booking-id": {
+      "state": "fail"
+    }
+  }
+}

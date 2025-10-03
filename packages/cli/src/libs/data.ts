@@ -75,6 +75,7 @@ export const parseDataFiles = async (
     proxyHost: string;
     proxyFirst: boolean;
     customFactoriesPath: string;
+    docOutputPath?: string;
   } = { ports: [], hostnames: [], proxyMode: false, proxyHost: '', proxyFirst: false, customFactoriesPath: '' },
   repair = false,
   configLoader?: MockproxConfigLoader
@@ -92,7 +93,8 @@ export const parseDataFiles = async (
         filePath,
         userOptions.ports[index],
         userOptions.customFactoriesPath,
-        configLoader
+        configLoader,
+        userOptions.docOutputPath
       );
 
     } catch (openAPIError) {

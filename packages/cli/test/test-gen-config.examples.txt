@@ -1,0 +1,108 @@
+Mockprox Configuration Examples
+=================================
+
+This file provides examples of how to customize your mockprox.config.json.
+By default, propertyOverrides and fakerFactories are EMPTY - the mock server
+will use your OpenAPI specification's defaults automatically.
+
+Only add overrides for properties you want to customize!
+
+Property Overrides
+------------------
+Add custom Faker.js patterns for specific property names across all responses:
+
+"propertyOverrides": {
+  "email": "{{faker.internet.email}}",
+  "firstName": "{{faker.person.firstName}}",
+  "lastName": "{{faker.person.lastName}}",
+  "phone": "{{faker.phone.number}}",
+  "address": "{{faker.location.streetAddress}}",
+  "city": "{{faker.location.city}}",
+  "zipCode": "{{faker.location.zipCode}}",
+  "country": "{{faker.location.country}}",
+  "companyName": "{{faker.company.name}}",
+  "description": "{{faker.lorem.paragraph}}",
+  "avatar": "{{faker.image.avatar}}",
+  "url": "{{faker.internet.url}}",
+  "price": "{{faker.commerce.price}}",
+  "productName": "{{faker.commerce.productName}}",
+  "status": "active"
+}
+
+Faker Factories
+---------------
+Create custom Faker.js functions for more complex logic:
+
+"fakerFactories": {
+  "customEmail": "return faker.internet.email({ firstName: 'test', lastName: 'user' });",
+  "randomStatus": "return faker.helpers.arrayElement(['active', 'inactive', 'pending']);",
+  "futureDate": "return faker.date.future().toISOString();",
+  "phoneNumber": "return faker.phone.number('+1-###-###-####');"
+}
+
+URL States
+----------
+Control response behavior per endpoint:
+
+"urlStates": {
+  "GET api/users": {
+    "state": "random"  // Use auto-generated mock data (default)
+  },
+  "GET api/users/:id": {
+    "state": "success",  // Custom state name
+    "statusCode": 200,
+    "body": "{\"id\": 1, \"name\": \"John Doe\"}",
+    "headers": [
+      { "key": "X-Custom-Header", "value": "custom-value" }
+    ]
+  },
+  "POST api/users": {
+    "state": "fail",
+    "statusCode": 400,
+    "body": "{\"error\": \"Validation failed\"}"
+  }
+}
+
+State Query Parameter
+---------------------
+Control states at runtime using ?state=<name> query parameter:
+
+  curl http://localhost:3001/api/users?state=success
+  curl http://localhost:3001/api/users?state=fail
+
+Available Faker.js Methods
+--------------------------
+Common faker methods you can use in propertyOverrides and fakerFactories:
+
+Person:
+  {{faker.person.firstName}}, {{faker.person.lastName}}, {{faker.person.fullName}}
+  {{faker.person.jobTitle}}, {{faker.person.bio}}
+
+Internet:
+  {{faker.internet.email}}, {{faker.internet.url}}, {{faker.internet.avatar}}
+  {{faker.internet.userName}}, {{faker.internet.password}}
+
+Location:
+  {{faker.location.city}}, {{faker.location.country}}, {{faker.location.zipCode}}
+  {{faker.location.streetAddress}}, {{faker.location.latitude}}
+
+Commerce:
+  {{faker.commerce.productName}}, {{faker.commerce.price}}
+  {{faker.commerce.department}}, {{faker.commerce.productDescription}}
+
+Company:
+  {{faker.company.name}}, {{faker.company.catchPhrase}}
+
+Date:
+  {{faker.date.past}}, {{faker.date.future}}, {{faker.date.recent}}
+
+Lorem:
+  {{faker.lorem.word}}, {{faker.lorem.sentence}}, {{faker.lorem.paragraph}}
+
+Number:
+  {{faker.number.int}}, {{faker.number.float}}
+
+String:
+  {{faker.string.uuid}}, {{faker.string.alphanumeric}}
+
+For full Faker.js documentation, visit: https://fakerjs.dev/api/
