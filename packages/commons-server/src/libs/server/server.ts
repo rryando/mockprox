@@ -1162,17 +1162,17 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
       if (this.environment.proxyFirst && this.environment.proxyMode && IsValidURL(this.environment.proxyHost)) {
         try {
           request.proxied = true;
+          
           const proxyUrl = new URL(request.url, this.environment.proxyHost).toString();
-
           const proxyOptions: RequestInit = {
             method: request.method,
             headers: {...request.headers} as HeadersInit,
           };
-
-          if (isBodySupportingMethod(request.method as Methods)) {
+          
+          if (isBodySupportingMethod(request.method.toLowerCase() as Methods)) {
             proxyOptions.body = request.rawBody;
           }
-
+          
           const proxyResponse = await fetch(proxyUrl, proxyOptions);
 
           // Only proceed with response if status < 400
@@ -1212,8 +1212,10 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
                 bodyType: BodyTypes.INLINE,
                 disableTemplating: true // disable templating for proxy responses
               }, request, response, false);
-            } else {
-              response.end();
+              
+              if (content) {
+                response.end();
+              }
             }
             return;
           }

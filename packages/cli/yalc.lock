@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "packages": {
+    "mockprox-commons-server": {
+      "signature": "e0d46646686473dc09fcb25e1a4f034d",
+      "file": true,
+      "replaced": "2.2.8"
+    },
+    "mockprox-commons": {
+      "signature": "f777cde00ddd726bed0882ea9ecc019e",
+      "file": true,
+      "replaced": "2.2.8"
+    }
+  }
+}
