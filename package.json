@@ -43,20 +43,20 @@
     "test:cli": "lerna run --stream --scope mockprox-cli test"
   },
   "devDependencies": {
-    "@eslint/js": "9.13.0",
+    "@eslint/js": "9.38.0",
     "@stylistic/eslint-plugin-js": "2.9.0",
     "@stylistic/eslint-plugin-ts": "2.9.0",
-    "@types/eslint__js": "8.42.3",
+    "@types/eslint__js": "9.14.0",
     "concurrently": "9.0.1",
     "dotenv": "16.4.5",
-    "eslint": "9.13.0",
+    "eslint": "9.38.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.2.1",
     "glob": "11.0.0",
-    "lerna": "6.6.2",
+    "lerna": "9.0.0",
     "prettier": "3.3.3",
     "prettier-plugin-organize-imports": "4.1.0",
-    "tsx": "4.19.1",
-    "typescript-eslint": "8.11.0"
+    "tsx": "4.20.6",
+    "typescript-eslint": "8.46.2"
   }
 }

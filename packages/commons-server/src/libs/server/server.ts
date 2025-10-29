@@ -1204,6 +1204,34 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
                 content = Buffer.from(arrayBuffer).toString();
               }
 
+              // Pretty console logging for proxied request + response
+              const formatForLog = (v: any) => {
+                try {
+                  if (typeof v === 'string') {
+                    // try to pretty-print JSON strings
+                    try {
+                      return JSON.stringify(JSON.parse(v), null, 2);
+                    } catch (_) {
+                      return v;
+                    }
+                  }
+
+                  return JSON.stringify(v, null, 2);
+                } catch (_) {
+                  return String(v);
+                }
+              };
+
+              try {
+                console.log('[proxy] %s %s', request.method, proxyUrl);
+                const reqPayload = request.body ?? request.stringBody ?? (request.rawBody ? request.rawBody.toString('utf8') : undefined);
+                console.log('[proxy] request payload:\n%s', formatForLog(reqPayload));
+                console.log('[proxy] response status: %d', proxyResponse.status);
+                console.log('[proxy] response payload:\n%s', formatForLog(content));
+              } catch (e) {
+                // Logging must never break proxy handling
+              }
+
               // @ts-expect-error this content is capable to serve json
               this.serveBody(content, route, {
                 ...route.responses[0], // use first response as base
