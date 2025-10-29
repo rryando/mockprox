@@ -78,6 +78,43 @@ export type Transaction = {
   timestampMs: number;
 };
 
+export type ProxyLogBody = {
+  value: string;
+  encoding: 'json' | 'utf8' | 'base64';
+  bytes: number;
+};
+
+export type ProxyLogRequest = {
+  method: string;
+  url: string;
+  clientIp?: string;
+  headers: Record<string, string>;
+  forwardedHeaders?: Record<string, string>;
+  body?: ProxyLogBody;
+};
+
+export type ProxyLogResponse = {
+  status: number;
+  statusText?: string;
+  headers: Record<string, string>;
+  forwardedHeaders?: Record<string, string>;
+  body?: ProxyLogBody;
+};
+
+export type ProxyLogEntry = {
+  id: string;
+  timestamp: string;
+  mode: 'proxy-first' | 'proxy-middleware';
+  targetUrl: string;
+  durationMs?: number;
+  level: 'info' | 'warn' | 'error';
+  request: ProxyLogRequest;
+  response?: ProxyLogResponse;
+  error?: string;
+  errorStack?: string;
+  note?: string;
+};
+
 export type ServerOptions = {
   /**
    * Directory where to find the environment file.

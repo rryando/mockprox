@@ -1,5 +1,10 @@
 import { ServerErrorCodes } from '../enums/errors.enum';
-import { InFlightRequest, InvokedCallback, Transaction } from './server.model';
+import {
+  InFlightRequest,
+  InvokedCallback,
+  ProxyLogEntry,
+  Transaction
+} from './server.model';
 
 export type ServerEvents = {
   error: (
@@ -29,4 +34,5 @@ export type ServerEvents = {
   'ws-message-received': (request: InFlightRequest, message: string) => void;
   'doc-server-started': () => void;
   'doc-server-stopped': () => void;
+  'proxy-log': (entry: ProxyLogEntry) => void;
 };

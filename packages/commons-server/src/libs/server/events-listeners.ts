@@ -5,6 +5,9 @@ import {
   InFlightRequest,
   InvokedCallback,
   Methods,
+  ProxyLogEntry,
+  ProxyLogRequest,
+  ProxyLogResponse,
   Transaction
 } from 'mockprox-commons';
 import { format } from 'util';
@@ -21,6 +24,111 @@ const filterAuthorizationHeaders = (header: Header) => {
   }
 
   return header;
+};
+
+const HEADER_KEYS_TO_SURFACE = [
+  'authorization',
+  'proxy-authorization',
+  'content-type',
+  'accept'
+];
+
+const indentBlock = (value: string, spaces = 4) =>
+  value
+    .split(/\r?\n/)
+    .map((line) => `${' '.repeat(spaces)}${line}`)
+    .join('\n');
+
+const pickImportantHeaders = (headers?: Record<string, string>) => {
+  if (!headers) {
+    return null;
+  }
+
+  const selected = HEADER_KEYS_TO_SURFACE.map((key) => {
+    const value = headers[key];
+    return value ? `${key}: ${value}` : null;
+  }).filter(Boolean) as string[];
+
+  return selected.length ? selected.join('\n') : null;
+};
+
+const formatBodySection = (title: string, body?: ProxyLogRequest['body']) => {
+  if (!body || body.value === undefined || body.value === null) {
+    return null;
+  }
+
+  const header = `${title} (${body.encoding}, ${body.bytes} bytes)`;
+  const content = body.value === '' ? '∅' : body.value;
+
+  return `${header}\n${indentBlock(content)}`;
+};
+
+const formatResponseBodySection = (
+  title: string,
+  body?: ProxyLogResponse['body']
+) => formatBodySection(title, body as ProxyLogRequest['body']);
+
+const buildPrettyProxyLog = (entry: ProxyLogEntry) => {
+  const lines: string[] = [];
+  const statusEmoji = entry.error
+    ? '❌'
+    : entry.response && entry.response.status >= 400
+    ? '⚠️'
+    : '✅';
+
+  lines.push(
+    `\n🛰️  Proxy ${entry.mode === 'proxy-first' ? 'primary lookup' : 'middleware fallback'}`
+  );
+  lines.push(`→ ${entry.request.method} ${entry.request.url}`);
+
+  if (entry.durationMs !== undefined) {
+    lines.push(`⏱️  Duration: ${entry.durationMs} ms`);
+  }
+
+  const requestHeaders = pickImportantHeaders(entry.request.headers);
+  if (requestHeaders) {
+    lines.push(`🔑 Request headers:\n${indentBlock(requestHeaders)}`);
+  }
+
+  const requestBodySection = formatBodySection('📤 Request payload', entry.request.body);
+  if (requestBodySection) {
+    lines.push(requestBodySection);
+  }
+
+  if (entry.response) {
+    const { status, statusText, headers, body } = entry.response;
+    const statusLabel = statusText ? `${status} ${statusText}` : String(status);
+    lines.push(`${statusEmoji} Response: ${statusLabel}`);
+
+    const responseHeaders = pickImportantHeaders(headers);
+    if (responseHeaders) {
+      lines.push(`📬 Response headers:\n${indentBlock(responseHeaders)}`);
+    }
+
+    const responseBodySection = formatResponseBodySection(
+      '📥 Response payload',
+      body
+    );
+
+    if (responseBodySection) {
+      lines.push(responseBodySection);
+    }
+  }
+
+  if (entry.note) {
+    lines.push(`💡 Note: ${entry.note}`);
+  }
+
+  if (entry.error) {
+    lines.push(`❌ Error: ${entry.error}`);
+    if (entry.errorStack) {
+      lines.push(indentBlock(entry.errorStack));
+    }
+  }
+
+  lines.push('');
+
+  return lines.join('\n');
 };
 
 export const listenServerEvents = function (
@@ -195,6 +303,26 @@ export const listenServerEvents = function (
       logger.info('WebSocket Message Recieved', logMeta);
     }
   );
+
+  server.on('proxy-log', (entry: ProxyLogEntry) => {
+    const prettyLog = buildPrettyProxyLog(entry);
+
+    console.log(prettyLog);
+
+    logger.log(entry.level, 'Proxy request processed', {
+      ...defaultLogMeta,
+      proxy: {
+        id: entry.id,
+        mode: entry.mode,
+        targetUrl: entry.targetUrl,
+        durationMs: entry.durationMs,
+        requestMethod: entry.request.method,
+        status: entry.response?.status,
+        note: entry.note,
+        error: entry.error
+      }
+    });
+  });
 
   server.on(
     'ws-closed',

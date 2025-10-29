@@ -1,7 +1,7 @@
 {
   "name": "mockprox-commons-server",
   "description": "Mockprox's commons server library. Used in Mockprox CLI.",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "author": {
     "name": "Ryan Rynaldo",
     "email": "rynaldo.dev@gmail.com",
@@ -58,7 +58,7 @@
     "jsonpath-plus": "10.3.0",
     "killable": "1.0.1",
     "mime-types": "2.1.35",
-    "mockprox-commons": "2.3.2",
+    "mockprox-commons": "2.3.3",
     "object-path": "0.11.8",
     "path-to-regexp": "8.2.0",
     "qs": "6.13.0",

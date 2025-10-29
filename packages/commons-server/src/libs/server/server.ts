@@ -4,11 +4,15 @@ import cookieParser from 'cookie-parser';
 import { EventEmitter } from 'events';
 import express, { Application, NextFunction, Request, Response } from 'express';
 import { createReadStream, mkdirSync, readFile, readFileSync, statSync } from 'fs';
-import type { RequestListener } from 'http';
 import {
-  IncomingMessage,
   createServer as httpCreateServer,
   Server as httpServer
+} from 'http';
+import type {
+  ClientRequest,
+  IncomingMessage,
+  OutgoingHttpHeaders,
+  RequestListener
 } from 'http';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
@@ -42,6 +46,8 @@ import {
   ServerOptions,
   StreamingMode,
   Transaction,
+  ProxyLogBody,
+  ProxyLogEntry,
   defaultEnvironmentVariablesPrefix,
   defaultMaxTransactionLogs,
   generateUUID,
@@ -89,6 +95,13 @@ import {
   serveFileContentInWs
 } from './ws';
 
+type ProxyRequestMeta = {
+  startedAt: number;
+  mode: ProxyLogEntry['mode'];
+  targetUrl: string;
+  request: ProxyLogEntry['request'];
+};
+
 /**
  * Create a server instance from an Environment object.
  *
@@ -118,6 +131,7 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
   };
   private transactionLogs: Transaction[] = [];
   private configLoader?: MockproxConfigLoader;
+  private proxyRequestMeta = new WeakMap<Request, ProxyRequestMeta>();
 
   constructor(
     private environment: Environment,
@@ -1159,97 +1173,146 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
   private createRouteHandler(route: Route, crudId?: CrudRouteIds) {
     return async (request: Request, response: Response, next: NextFunction) => {
       // Handle proxy first if enabled
-      if (this.environment.proxyFirst && this.environment.proxyMode && IsValidURL(this.environment.proxyHost)) {
+      if (
+        this.environment.proxyFirst &&
+        this.environment.proxyMode &&
+        IsValidURL(this.environment.proxyHost)
+      ) {
+        const proxyTargetUrl = this.buildProxyTargetUrlFromRequest(request);
+        const proxyMeta = this.createProxyRequestMeta(
+          request,
+          'proxy-first',
+          proxyTargetUrl
+        );
+
         try {
           request.proxied = true;
-          
-          const proxyUrl = new URL(request.url, this.environment.proxyHost).toString();
+
           const proxyOptions: RequestInit = {
             method: request.method,
-            headers: {...request.headers} as HeadersInit,
+            headers: this.headersFromIncoming(request.headers)
           };
-          
-          if (isBodySupportingMethod(request.method.toLowerCase() as Methods)) {
-            proxyOptions.body = request.rawBody;
+
+          const forwardedRequestHeaders = this.headersFromHeadersInit(
+            proxyOptions.headers
+          );
+
+          if (Object.keys(forwardedRequestHeaders).length > 0) {
+            proxyMeta.request.forwardedHeaders = forwardedRequestHeaders;
           }
-          
-          const proxyResponse = await fetch(proxyUrl, proxyOptions);
 
-          // Only proceed with response if status < 400
-          if (proxyResponse.status < 400) {
-            // Convert proxy headers to our Header format
-            const proxyHeaders: Record<string, string> = {};
-            proxyResponse.headers.forEach((value, key) => {
-              proxyHeaders[key] = value;
-            });
+          const requestBodyForProxy = this.extractProxyRequestBody(request);
 
-            const transformedHeaders = TransformHeaders(proxyHeaders);
+          if (
+            requestBodyForProxy !== undefined &&
+            isBodySupportingMethod(request.method.toLowerCase() as Methods)
+          ) {
+            proxyOptions.body = requestBodyForProxy;
+          }
 
-            // Always add CORS headers (hardcoded for maximum compatibility)
-            const corsHeaders = CORSHeaders.map(header => ({ key: header.key, value: header.value }));
-            const finalHeaders = [...corsHeaders, ...transformedHeaders];
+          const proxyResponse = await fetch(proxyTargetUrl, proxyOptions);
+          const responseHeaders = this.headersFromFetch(proxyResponse.headers);
+          const responseHeaderArray: Header[] = Object.entries(
+            responseHeaders
+          ).map(([key, value]) => ({ key, value }));
+          const corsHeaders = CORSHeaders.map((header) => ({
+            key: header.key,
+            value: header.value
+          }));
+          const finalHeaders = [...corsHeaders, ...responseHeaderArray];
 
-            // Handle the response body
-            if (proxyResponse.body) {
-              const contentType = proxyResponse.headers.get('content-type');
-              let content: string | object;
-              
-              if (contentType?.includes('application/json')) {
-                // For JSON, keep it as an object to let serveBody handle the stringification
-                content = await proxyResponse.json();
-              } else if (contentType?.includes('text/')) {
-                content = await proxyResponse.text();
-              } else {
-                const arrayBuffer = await proxyResponse.arrayBuffer();
-                content = Buffer.from(arrayBuffer).toString();
-              }
+          const hasBody = Boolean(proxyResponse.body);
+          let responseBodyContent: string | object | undefined;
+          let responseBodyLog: ProxyLogBody | undefined;
 
-              // Pretty console logging for proxied request + response
-              const formatForLog = (v: any) => {
-                try {
-                  if (typeof v === 'string') {
-                    // try to pretty-print JSON strings
-                    try {
-                      return JSON.stringify(JSON.parse(v), null, 2);
-                    } catch (_) {
-                      return v;
-                    }
-                  }
+          if (hasBody) {
+            const parsedBody = await this.parseProxyResponseBody(proxyResponse);
+            responseBodyContent = parsedBody.content;
+            responseBodyLog = parsedBody.bodyLog;
+          }
 
-                  return JSON.stringify(v, null, 2);
-                } catch (_) {
-                  return String(v);
-                }
-              };
+          const responseSnapshot: ProxyLogEntry['response'] = {
+            status: proxyResponse.status,
+            statusText: proxyResponse.statusText,
+            headers: responseHeaders,
+            forwardedHeaders: this.headersFromArray(finalHeaders)
+          };
 
-              try {
-                console.log('[proxy] %s %s', request.method, proxyUrl);
-                const reqPayload = request.body ?? request.stringBody ?? (request.rawBody ? request.rawBody.toString('utf8') : undefined);
-                console.log('[proxy] request payload:\n%s', formatForLog(reqPayload));
-                console.log('[proxy] response status: %d', proxyResponse.status);
-                console.log('[proxy] response payload:\n%s', formatForLog(content));
-              } catch (e) {
-                // Logging must never break proxy handling
-              }
+          if (responseBodyLog) {
+            responseSnapshot.body = responseBodyLog;
+          }
 
-              // @ts-expect-error this content is capable to serve json
-              this.serveBody(content, route, {
-                ...route.responses[0], // use first response as base
+          const proxyLogBase: Omit<ProxyLogEntry, 'id' | 'timestamp'> = {
+            level: this.determineProxyLogLevel(proxyResponse.status),
+            mode: proxyMeta.mode,
+            targetUrl: proxyMeta.targetUrl,
+            durationMs: Date.now() - proxyMeta.startedAt,
+            request: proxyMeta.request,
+            response: responseSnapshot
+          };
+
+          if (
+            proxyResponse.status < 400 &&
+            hasBody &&
+            responseBodyContent !== undefined
+          ) {
+            this.emitProxyLog(proxyLogBase);
+
+            this.serveBody(
+              responseBodyContent as any,
+              route,
+              {
+                ...route.responses[0],
                 statusCode: proxyResponse.status,
                 headers: finalHeaders,
                 bodyType: BodyTypes.INLINE,
-                disableTemplating: true // disable templating for proxy responses
-              }, request, response, false);
-              
-              if (content) {
-                response.end();
-              }
+                disableTemplating: true
+              },
+              request,
+              response,
+              false
+            );
+
+            if (responseBodyContent) {
+              response.end();
             }
+
             return;
           }
+
+          const noteParts: string[] = [];
+
+          if (!hasBody) {
+            noteParts.push('Upstream response did not include a body.');
+          }
+
+          if (proxyResponse.status >= 400) {
+            noteParts.push(
+              `Upstream returned status ${proxyResponse.status}; falling back to mock response.`
+            );
+          }
+
+          this.emitProxyLog({
+            ...proxyLogBase,
+            note: noteParts.length ? noteParts.join(' ') : undefined
+          });
         } catch (error) {
+          this.emitProxyLog({
+            level: 'error',
+            mode: proxyMeta.mode,
+            targetUrl: proxyMeta.targetUrl,
+            durationMs: Date.now() - proxyMeta.startedAt,
+            request: proxyMeta.request,
+            error: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined
+          });
+
           // Log proxy error but continue to mock route
-          this.emit('error', ServerErrorCodes.PROXY_ERROR, error instanceof Error ? error : new Error(String(error)));
+          this.emit(
+            'error',
+            ServerErrorCodes.PROXY_ERROR,
+            error instanceof Error ? error : new Error(String(error))
+          );
         }
       }
       
@@ -1998,21 +2061,42 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
             proxyReq: (proxyReq, request) => {
               this.refreshEnvironment();
 
-              request.proxied = true;
+              const expressRequest = request as Request;
+              expressRequest.proxied = true;
+
+              const proxyMeta = this.createProxyRequestMeta(
+                expressRequest,
+                'proxy-middleware',
+                this.buildProxyMiddlewareTargetUrl(proxyReq)
+              );
+
+              this.proxyRequestMeta.set(expressRequest, proxyMeta);
 
               this.setHeaders(
                 this.environment.proxyReqHeaders,
                 proxyReq,
-                request as Request
+                expressRequest
               );
 
-              // re-stream the body (intercepted by body parser method)
-              if (request.rawBody) {
-                proxyReq.write(request.rawBody);
+              proxyMeta.request.forwardedHeaders = this.headersFromOutgoing(
+                proxyReq.getHeaders()
+              );
+
+              const rawBody = this.extractProxyRequestBody(expressRequest);
+
+              if (rawBody instanceof Buffer && rawBody.length > 0) {
+                proxyReq.write(rawBody);
               }
             },
             proxyRes: (proxyRes, request, response) => {
               this.refreshEnvironment();
+
+              const expressRequest = request as Request;
+              const meta = this.proxyRequestMeta.get(expressRequest);
+
+              const upstreamHeadersRecord = this.headersFromArray(
+                TransformHeaders(proxyRes.headers)
+              );
 
               const buffers: Buffer[] = [];
               proxyRes.on('data', (chunk) => {
@@ -2020,16 +2104,87 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
               });
               proxyRes.on('end', () => {
                 response.body = Buffer.concat(buffers);
+
+                const forwardedHeadersRecord = this.headersFromArray(
+                  TransformHeaders(proxyRes.headers)
+                );
+
+                const responseSnapshot: ProxyLogEntry['response'] = {
+                  status: proxyRes.statusCode ?? 0,
+                  statusText: proxyRes.statusMessage ?? '',
+                  headers: upstreamHeadersRecord,
+                  forwardedHeaders: forwardedHeadersRecord
+                };
+
+                const responseBodyLog = this.createProxyLogBody(response.body);
+
+                if (responseBodyLog) {
+                  responseSnapshot.body = responseBodyLog;
+                }
+
+                const expressForwardedHeaders = this.headersFromOutgoing(
+                  response.getHeaders() as OutgoingHttpHeaders
+                );
+
+                if (Object.keys(expressForwardedHeaders).length > 0) {
+                  responseSnapshot.forwardedHeaders = {
+                    ...responseSnapshot.forwardedHeaders,
+                    ...expressForwardedHeaders
+                  };
+                }
+
+                const targetUrl =
+                  meta?.targetUrl ??
+                  this.buildProxyTargetUrlFromRequest(expressRequest);
+
+                const requestLog =
+                  meta?.request ??
+                  this.buildProxyRequestSnapshot(expressRequest, targetUrl);
+
+                this.emitProxyLog({
+                  level: this.determineProxyLogLevel(responseSnapshot.status),
+                  mode: meta?.mode ?? 'proxy-middleware',
+                  targetUrl,
+                  durationMs: meta ? Date.now() - meta.startedAt : undefined,
+                  request: requestLog,
+                  response: responseSnapshot
+                });
+
+                this.proxyRequestMeta.delete(expressRequest);
               });
 
               this.setHeaders(
                 this.environment.proxyResHeaders,
                 proxyRes,
-                request as Request
+                expressRequest
               );
             },
             error: (error, request, response) => {
-              this.emit('error', ServerErrorCodes.PROXY_ERROR, error);
+              const expressRequest = request as Request;
+              const meta = this.proxyRequestMeta.get(expressRequest);
+              const targetUrl =
+                meta?.targetUrl ??
+                this.buildProxyTargetUrlFromRequest(expressRequest);
+
+              this.emitProxyLog({
+                level: 'error',
+                mode: meta?.mode ?? 'proxy-middleware',
+                targetUrl,
+                durationMs: meta ? Date.now() - meta.startedAt : undefined,
+                request:
+                  meta?.request ??
+                  this.buildProxyRequestSnapshot(expressRequest, targetUrl),
+                error: error instanceof Error ? error.message : String(error),
+                errorStack: error instanceof Error ? error.stack : undefined
+              });
+
+              this.proxyRequestMeta.delete(expressRequest);
+
+              this.emit(
+                'error',
+                ServerErrorCodes.PROXY_ERROR,
+                error instanceof Error ? error : new Error(String(error))
+              );
 
               this.sendError(
                 response as Response,
@@ -2095,6 +2250,326 @@ export class MockproxServer extends (EventEmitter as new () => TypedEmitter<Serv
       // Fallback to first response if no label match
       return responses[0];
     }
+  }
+
+  private buildProxyTargetUrlFromRequest(request: Request): string {
+    try {
+      const relativeUrl = request.originalUrl || request.url || '/';
+
+      return new URL(relativeUrl, this.environment.proxyHost).toString();
+    } catch (_error) {
+      return this.environment.proxyHost;
+    }
+  }
+
+  private buildProxyMiddlewareTargetUrl(proxyReq: ClientRequest): string {
+    try {
+      const baseUrl = new URL(this.environment.proxyHost);
+      const path = ((proxyReq as any).path as string | undefined) ?? '/';
+
+      return new URL(path, baseUrl).toString();
+    } catch (_error) {
+      return this.environment.proxyHost;
+    }
+  }
+
+  private createProxyRequestMeta(
+    request: Request,
+    mode: ProxyLogEntry['mode'],
+    targetUrl: string
+  ): ProxyRequestMeta {
+    return {
+      startedAt: Date.now(),
+      mode,
+      targetUrl,
+      request: this.buildProxyRequestSnapshot(request, targetUrl)
+    };
+  }
+
+  private buildProxyRequestSnapshot(
+    request: Request,
+    targetUrl: string
+  ): ProxyLogEntry['request'] {
+    const headers = this.headersFromIncoming(request.headers);
+    const bodyForLog = this.createProxyLogBody(
+      this.extractRequestBodyForLog(request)
+    );
+
+    const snapshot: ProxyLogEntry['request'] = {
+      method: (request.method || 'GET').toUpperCase(),
+      url: targetUrl,
+      clientIp: request.ip,
+      headers
+    };
+
+    if (bodyForLog) {
+      snapshot.body = bodyForLog;
+    }
+
+    return snapshot;
+  }
+
+  private extractRequestBodyForLog(request: Request): unknown {
+    const extendedRequest = request as Request & {
+      rawBody?: Buffer;
+      stringBody?: string;
+    };
+
+    if (extendedRequest.rawBody instanceof Buffer) {
+      if (extendedRequest.rawBody.length === 0) {
+        return undefined;
+      }
+
+      return extendedRequest.rawBody;
+    }
+
+    if (
+      typeof extendedRequest.stringBody === 'string' &&
+      extendedRequest.stringBody.length > 0
+    ) {
+      return extendedRequest.stringBody;
+    }
+
+    if (request.body !== undefined && request.body !== null) {
+      return request.body;
+    }
+
+    return undefined;
+  }
+
+  private extractProxyRequestBody(
+    request: Request
+  ): Buffer | string | undefined {
+    const extendedRequest = request as Request & {
+      rawBody?: Buffer;
+      stringBody?: string;
+    };
+
+    if (extendedRequest.rawBody instanceof Buffer) {
+      return extendedRequest.rawBody.length > 0
+        ? extendedRequest.rawBody
+        : undefined;
+    }
+
+    if (
+      typeof extendedRequest.stringBody === 'string' &&
+      extendedRequest.stringBody.length > 0
+    ) {
+      return extendedRequest.stringBody;
+    }
+
+    return undefined;
+  }
+
+  private headersFromIncoming(
+    headers: Request['headers']
+  ): Record<string, string> {
+    return Object.entries(headers).reduce<Record<string, string>>(function (
+      acc,
+      [key, value]
+    ) {
+      if (value === undefined) {
+        return acc;
+      }
+
+      acc[key] = Array.isArray(value) ? value.join(',') : String(value);
+
+      return acc;
+    }, {});
+  }
+
+  private headersFromOutgoing(
+    headers: OutgoingHttpHeaders
+  ): Record<string, string> {
+    return Object.entries(headers).reduce<Record<string, string>>(function (
+      acc,
+      [key, value]
+    ) {
+      if (value === undefined) {
+        return acc;
+      }
+
+      if (Array.isArray(value)) {
+        acc[key] = value.join(',');
+      } else {
+        acc[key] = String(value);
+      }
+
+      return acc;
+    }, {});
+  }
+
+  private headersFromArray(headers: Header[]): Record<string, string> {
+    return headers.reduce<Record<string, string>>((acc, header) => {
+      acc[header.key] = header.value;
+      return acc;
+    }, {});
+  }
+
+  private headersFromFetch(headers: Headers): Record<string, string> {
+    const record: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      record[key] = value;
+    });
+    return record;
+  }
+
+  private headersFromHeadersInit(headers?: HeadersInit): Record<string, string> {
+    if (!headers) {
+      return {};
+    }
+
+    if (Array.isArray(headers)) {
+      return headers.reduce<Record<string, string>>((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+    }
+
+    if (headers instanceof Headers) {
+      return this.headersFromFetch(headers);
+    }
+
+    return Object.entries(headers as Record<string, string | string[]>).reduce<
+      Record<string, string>
+    >((acc, [key, value]) => {
+      acc[key] = Array.isArray(value) ? value.join(',') : String(value);
+      return acc;
+    }, {});
+  }
+
+  private createProxyLogBody(value: unknown): ProxyLogBody | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (value instanceof Buffer) {
+      if (value.length === 0) {
+        return { value: '', encoding: 'utf8', bytes: 0 };
+      }
+
+      const asString = value.toString('utf8');
+
+      if (asString.includes('\uFFFD')) {
+        return {
+          value: value.toString('base64'),
+          encoding: 'base64',
+          bytes: value.length
+        };
+      }
+
+      return {
+        value: asString,
+        encoding: 'utf8',
+        bytes: value.length
+      };
+    }
+
+    if (typeof value === 'string') {
+      const bytes = Buffer.byteLength(value);
+
+      try {
+        if (value.trim().length > 0) {
+          const parsed = JSON.parse(value);
+          const pretty = JSON.stringify(parsed, null, 2);
+
+          return { value: pretty, encoding: 'json', bytes };
+        }
+      } catch (_error) {
+        // fall through to raw string
+      }
+
+      return { value, encoding: 'utf8', bytes };
+    }
+
+    try {
+      const json = JSON.stringify(value, null, 2);
+      return {
+        value: json,
+        encoding: 'json',
+        bytes: Buffer.byteLength(json)
+      };
+    } catch (_error) {
+      const fallback = String(value);
+      return {
+        value: fallback,
+        encoding: 'utf8',
+        bytes: Buffer.byteLength(fallback)
+      };
+    }
+  }
+
+  private determineProxyLogLevel(status?: number): 'info' | 'warn' | 'error' {
+    if (status === undefined || status === null) {
+      return 'info';
+    }
+
+    if (status >= 500) {
+      return 'error';
+    }
+
+    if (status >= 400) {
+      return 'warn';
+    }
+
+    return 'info';
+  }
+
+  private emitProxyLog(entry: Omit<ProxyLogEntry, 'id' | 'timestamp'>) {
+    this.emit('proxy-log', {
+      id: generateUUID(),
+      timestamp: new Date().toISOString(),
+      ...entry
+    });
+  }
+
+  private async parseProxyResponseBody(
+    proxyResponse: globalThis.Response
+  ): Promise<{ content?: string | object; bodyLog?: ProxyLogBody }> {
+    if (!proxyResponse.body) {
+      return {};
+    }
+
+    const contentType = proxyResponse.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const text = await proxyResponse.text();
+
+      try {
+        const parsed = JSON.parse(text);
+        return {
+          content: parsed,
+          bodyLog: this.createProxyLogBody(parsed)
+        };
+      } catch (_error) {
+        return {
+          content: text,
+          bodyLog: this.createProxyLogBody(text)
+        };
+      }
+    }
+
+    if (
+      contentType.startsWith('text/') ||
+      contentType.includes('xml') ||
+      contentType.includes('html') ||
+      contentType.includes('javascript')
+    ) {
+      const text = await proxyResponse.text();
+
+      return {
+        content: text,
+        bodyLog: this.createProxyLogBody(text)
+      };
+    }
+
+    const arrayBuffer = await proxyResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    return {
+      content: buffer.toString(),
+      bodyLog: this.createProxyLogBody(buffer)
+    };
   }
 
   /**
